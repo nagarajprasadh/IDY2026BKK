@@ -1436,8 +1436,7 @@ function chatReply(q) {
   renderChips(kb.chips.slice(0,3));
 }
 
-</script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js">
+
 /* ── CONTACT FORM ──────────────────────────────────────────────────────────── */
 const CONTACT_FAQ = {
   registration: [
@@ -1517,7 +1516,7 @@ async function submitContact() {
   try {
     const resp = await fetch(SCRIPT_URL, {
       method:'POST', mode:'no-cors',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'text/plain'},
       body: JSON.stringify({ action:'contact', name, email, subject:subj, message:msg, lang })
     });
     document.getElementById('contactFormFields').style.display = 'none';
@@ -1533,6 +1532,8 @@ async function submitContact() {
   }
 }
 
+
 </script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </body>
 </html>
