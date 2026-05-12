@@ -249,6 +249,14 @@
                       color: var(--yellow); text-shadow: 0 2px 12px rgba(0,0,0,.35); }
 
 
+    /* ── COUNTDOWN BANNER ─────────────────────────────────────── */
+    .countdown-banner { background:#003E7E; border-radius:14px; padding:16px 20px 18px; text-align:center; margin-bottom:16px; }
+    .cd-heading { font-size:13px; font-weight:700; color:rgba(255,255,255,.75); text-transform:uppercase; letter-spacing:.1em; margin-bottom:10px; }
+    .countdown-units { display:flex; gap:8px; justify-content:center; }
+    .cd-unit { text-align:center; background:rgba(255,255,255,.12); border-radius:10px; padding:7px 14px; min-width:58px; }
+    .cd-num { font-size:28px; font-weight:800; color:#FDE760; line-height:1; font-variant-numeric:tabular-nums; }
+    .cd-lbl { font-size:10px; color:rgba(255,255,255,.65); margin-top:3px; text-transform:uppercase; letter-spacing:.06em; }
+
     /* ── CONTACT FORM ──────────────────────────────────────────── */
     .contact-card { background:#fff; border-radius:16px; padding:20px; box-shadow:0 4px 20px rgba(0,114,187,.10); border:1.5px solid var(--border); margin-bottom:8px; }
     .contact-subject-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:8px; margin:14px 0; }
@@ -460,6 +468,17 @@
 
 <main>
   <div id="alertBox"></div>
+
+  <!-- COUNTDOWN BANNER -->
+  <div class="countdown-banner" id="countdownBanner">
+    <div class="cd-heading">Countdown to 12th International Day of Yoga</div>
+    <div class="countdown-units">
+      <div class="cd-unit"><div class="cd-num" id="cdDays">40</div><div class="cd-lbl">Days</div></div>
+      <div class="cd-unit"><div class="cd-num" id="cdMin">00</div><div class="cd-lbl">Min</div></div>
+      <div class="cd-unit"><div class="cd-num" id="cdSec">00</div><div class="cd-lbl">Sec</div></div>
+    </div>
+  </div>
+
   <div id="formSection">
 
     <!-- EVENT DETAILS -->
@@ -1758,6 +1777,30 @@ async function submitContact() {
   }
 }
 
+// ── COUNTDOWN TIMER ───────────────────────────────────────────────────────────
+(function startCountdown(){
+  const target = new Date('2026-06-21T05:30:00+07:00').getTime();
+  const pad = n => String(n).padStart(2,'0');
+  function tick(){
+    const diff = target - Date.now();
+    if(diff <= 0){
+      const b=document.getElementById('countdownBanner');
+      if(b) b.style.display='none';
+      return;
+    }
+    const days = Math.floor(diff / 86400000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    const dEl=document.getElementById('cdDays');
+    const mEl=document.getElementById('cdMin');
+    const sEl=document.getElementById('cdSec');
+    if(dEl) dEl.textContent = days;
+    if(mEl) mEl.textContent = pad(mins);
+    if(sEl) sEl.textContent = pad(secs);
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
 
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
