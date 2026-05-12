@@ -522,6 +522,15 @@ async function markCollected(docId, queueNum) {
         const cardEl = document.getElementById('card-' + queueNum);
         if (cardEl) cardEl.outerHTML = buildCard(updated);
       }
+    } else if (data.alreadyCollected) {
+      // Already collected — refresh card to show correct state, warn staff
+      await loadData(false);
+      const updated = DATA.find(r => Number(r.queueNumber) === Number(queueNum));
+      if (updated) {
+        const cardEl = document.getElementById('card-' + queueNum);
+        if (cardEl) cardEl.outerHTML = buildCard(updated);
+      }
+      showError('⚠️ Already collected' + (data.collectedAt ? ' at ' + fmtTime(data.collectedAt) : '') + '. Cannot collect twice.');
     } else {
       btn.disabled = false;
       btn.innerHTML = '✅ Confirm Collection';
@@ -792,6 +801,14 @@ async function qrMarkCollected() {
       if (updated) renderQRResult(updated);
       // Also refresh main results if that queue is showing
       if (lastSearch) doSearch();
+    } else if (data.alreadyCollected) {
+      // Show already-collected state in the QR result card — no second collection allowed
+      await loadData(false);
+      const updated = DATA.find(r => String(r.docId) === String(scanDocId));
+      if (updated) {
+        renderQRResult(updated);  // re-renders with "Already Collected" banner
+      }
+      showError('⚠️ Already collected' + (data.collectedAt ? ' at ' + fmtTime(data.collectedAt) : '') + '. Cannot collect twice.');
     } else {
       btn.disabled  = false;
       btn.innerHTML = '✅ Confirm — Hand Over All Items';

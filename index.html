@@ -202,6 +202,34 @@
     }
     .dl-btn:hover { background: #C85A00; transform: translateY(-1px); }
     .screenshot-hint { font-size: 12px; color: var(--muted); margin-top: 10px; padding: 8px 13px; background: var(--surface); border-radius: 8px; border: 1px solid var(--border); }
+    /* ── Share / forward UI ──────────────────────────────────────────────── */
+    .share-row { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin:14px 0 4px; }
+    .share-btn { display:inline-flex; align-items:center; gap:5px; padding:9px 14px; border-radius:12px; border:none; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; transition:opacity .15s; touch-action:manipulation; -webkit-tap-highlight-color:transparent; }
+    .share-btn:active { opacity:.82; }
+    .share-wa     { background:#25D366; color:#fff; }
+    .share-cal    { background:#4285F4; color:#fff; }
+    .share-map    { background:#EA4335; color:#fff; }
+    .share-native { background:#007AFF; color:#fff; }
+    .cal-menu { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; padding:10px 0 4px; }
+    .cal-link-btn { display:inline-flex; align-items:center; gap:5px; padding:8px 14px; border-radius:10px; font-size:12px; font-weight:700; border:1.5px solid var(--border); background:#fff; color:var(--primary); cursor:pointer; text-decoration:none; font-family:inherit; touch-action:manipulation; }
+    /* Copy queue number */
+    .copy-q-btn { background:rgba(255,255,255,.18); border:1.5px solid rgba(255,255,255,.4); color:#fff; border-radius:8px; padding:4px 12px; font-size:11px; font-weight:700; cursor:pointer; font-family:inherit; margin-top:6px; transition:background .15s; touch-action:manipulation; }
+    .copy-q-btn.copied { background:rgba(255,255,255,.35); }
+    /* QR zoom overlay */
+    .qr-zoom-overlay { position:fixed; inset:0; z-index:900; background:rgba(0,0,0,.88); display:none; flex-direction:column; align-items:center; justify-content:center; gap:14px; cursor:pointer; }
+    .qr-zoom-overlay.open { display:flex; }
+    .qr-zoom-img { width:min(80vw,300px); height:min(80vw,300px); border-radius:16px; background:#fff; padding:12px; box-shadow:0 4px 32px rgba(0,0,0,.5); object-fit:contain; }
+    .qr-zoom-hint { color:#fff; font-size:13px; opacity:.75; }
+    #qrCodeDiv { cursor:pointer; }
+    /* Forward to email */
+    .fwd-section { margin:14px 0 0; padding:14px 16px; background:var(--surface); border-radius:12px; border:1.5px solid var(--border); text-align:left; }
+    .fwd-label { font-size:12px; font-weight:700; color:var(--primary); margin-bottom:8px; }
+    .fwd-row { display:flex; gap:8px; }
+    .fwd-input { flex:1; padding:9px 12px; border:1.5px solid var(--border); border-radius:10px; font-size:14px; font-family:inherit; outline:none; min-width:0; background:#fff; }
+    .fwd-input:focus { border-color:var(--primary); }
+    .fwd-btn { background:var(--primary); color:#fff; border:none; border-radius:10px; padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; touch-action:manipulation; }
+    .fwd-btn:disabled { opacity:.6; }
+    .fwd-status { font-size:12px; margin-top:6px; min-height:16px; }
     .email-note { font-size: 12px; color: var(--muted); margin-top: 8px; padding: 8px 13px; background: #F0FDF4; border-radius: 8px; border: 1px solid #A7F3D0; }
 
     /* ── QR CODE SECTION ────────────────────────────────── */
@@ -563,13 +591,14 @@
       <div class="queue-box">
         <div class="q-label" id="lbQueueNum">QUEUE NUMBER</div>
         <div class="q-num"   id="displayQueue">1001</div>
+        <div><button class="copy-q-btn" id="copyQBtn" onclick="copyQueue()">📋 <span id="lbCopyQ">Copy</span></button></div>
         <div class="q-hint"  id="lbQueueHint">Show this at the collection counter · 5:30 AM</div>
       </div>
 
       <!-- QR CODE -->
       <div class="qr-section">
         <p class="qr-section-label">Scan at Check-In</p>
-        <div id="qrCodeDiv"></div>
+        <div id="qrCodeDiv" onclick="zoomQR()" title="Tap to enlarge"></div>
         <p class="code-hint" id="lbCodeHint">Show QR or queue number at the collection counter</p>
       </div>
 
@@ -578,8 +607,39 @@
       <button class="dl-btn" onclick="downloadImage()">
         ⬇️ <span id="lbDownload">Download Queue Pass</span>
       </button>
+
+      <!-- Share row -->
+      <div class="share-row">
+        <button class="share-btn share-wa"     onclick="shareWhatsApp()">🟢 <span id="lbShareWA">WhatsApp</span></button>
+        <button class="share-btn share-cal"    onclick="toggleCalMenu()">📅 <span id="lbShareCal">Calendar</span></button>
+        <button class="share-btn share-map"    onclick="openMap()">📍 <span id="lbShareMap">Directions</span></button>
+        <button class="share-btn share-native" id="nativeShareBtn" onclick="nativeShare()" style="display:none">📤 <span id="lbShareNative">Share / Save</span></button>
+      </div>
+
+      <!-- Calendar submenu -->
+      <div class="cal-menu" id="calMenu" style="display:none;">
+        <a class="cal-link-btn" id="googleCalLink" href="#" target="_blank" rel="noopener">📅 <span id="lbCalGoogle">Google Calendar</span></a>
+        <button class="cal-link-btn" onclick="downloadICS()">🍎 <span id="lbCalApple">Apple / iCal</span></button>
+      </div>
+
+      <!-- Forward to another email -->
+      <div class="fwd-section">
+        <div class="fwd-label" id="lbFwdEmail">Forward confirmation to another email</div>
+        <div class="fwd-row">
+          <input class="fwd-input" id="fwdEmailInput" type="email" placeholder="email@example.com" autocomplete="email">
+          <button class="fwd-btn" id="fwdBtn" onclick="forwardPass()"><span id="lbFwdBtn">Send</span></button>
+        </div>
+        <div class="fwd-status" id="fwdStatus"></div>
+      </div>
+
       <p class="screenshot-hint" id="screenshotHint">💡 Check your email — it includes your QR code and queue pass. No download button? Screenshot this page as a backup.</p>
     </div>
+  </div>
+
+  <!-- QR zoom overlay -->
+  <div class="qr-zoom-overlay" id="qrZoomOverlay" onclick="closeQRZoom()">
+    <img class="qr-zoom-img" id="qrZoomImg" src="" alt="QR Code">
+    <p class="qr-zoom-hint">Tap anywhere to close</p>
   </div>
 
   <!-- FAQ -->
@@ -735,6 +795,11 @@ const TX = {
     contactErrFail:'Could not send message. Please email us at idy2026bkk@gmail.com',
     contactSuccessTitle:'Message sent!', contactSuccessMsg:"We'll get back to you as soon as possible.",
     footerAdmin:'Staff Admin Portal →', footerMap:'📍 Venue Map',
+    lbCopyQ:'Copy', copied:'Copied!',
+    lbShareWA:'WhatsApp', lbShareCal:'Calendar', lbShareMap:'Directions', lbShareNative:'Share / Save',
+    lbCalGoogle:'Google Calendar', lbCalApple:'Apple / iCal',
+    lbFwdEmail:'Forward confirmation to another email', lbFwdBtn:'Send',
+    fwdSuccess:'✅ Sent! Check the inbox.', fwdFail:'Could not send. Please try again.',
     saveBannerTitle:'📧 Confirmation email sent! Your QR code is included.',
     saveBannerSub:'Check your inbox for your queue pass. Also download it below or screenshot this page as a backup for easy offline access on the day.',
     screenshotHint:'💡 No download button? Screenshot this page — your QR code and queue number are valid either way. Check your email for the full confirmation with QR code.',
@@ -828,6 +893,11 @@ const TX = {
     contactErrFail:'ไม่สามารถส่งข้อความได้ กรุณาอีเมล idy2026bkk@gmail.com',
     contactSuccessTitle:'ส่งข้อความแล้ว!', contactSuccessMsg:'เราจะตอบกลับโดยเร็วที่สุด',
     footerAdmin:'พอร์ทัลสำหรับเจ้าหน้าที่ →', footerMap:'📍 แผนที่สถานที่',
+    lbCopyQ:'คัดลอก', copied:'คัดลอกแล้ว!',
+    lbShareWA:'WhatsApp', lbShareCal:'ปฏิทิน', lbShareMap:'เส้นทาง', lbShareNative:'แชร์ / บันทึก',
+    lbCalGoogle:'Google Calendar', lbCalApple:'Apple / iCal',
+    lbFwdEmail:'ส่งต่อการยืนยันไปยังอีเมลอื่น', lbFwdBtn:'ส่ง',
+    fwdSuccess:'✅ ส่งแล้ว! กรุณาตรวจกล่องจดหมาย', fwdFail:'ไม่สามารถส่งได้ กรุณาลองใหม่',
     saveBannerTitle:'📧 ส่งอีเมลยืนยันแล้ว! มี QR code แนบมาด้วย',
     saveBannerSub:'ตรวจสอบอีเมลของคุณสำหรับบัตรคิว นอกจากนี้ดาวน์โหลดหรือถ่ายภาพหน้าจอเพื่อเป็นสำรองสำหรับการเข้าถึงแบบออฟไลน์ในวันงาน',
     screenshotHint:'💡 ดาวน์โหลดไม่ได้? ถ่ายภาพหน้าจอก็ได้ — QR code และหมายเลขคิวใช้งานได้เหมือนกัน ตรวจสอบอีเมลของคุณสำหรับการยืนยันพร้อม QR code',
@@ -919,6 +989,11 @@ const TX = {
     contactErrFail:'संदेश नहीं भेजा जा सका। कृपया idy2026bkk@gmail.com पर ईमेल करें।',
     contactSuccessTitle:'संदेश भेज दिया गया!', contactSuccessMsg:'हम जल्द से जल्द जवाब देंगे।',
     footerAdmin:'स्टाफ एडमिन पोर्टल →', footerMap:'📍 स्थान मानचित्र',
+    lbCopyQ:'कॉपी करें', copied:'कॉपी हो गया!',
+    lbShareWA:'WhatsApp', lbShareCal:'कैलेंडर', lbShareMap:'रास्ता खोजें', lbShareNative:'शेयर / सेव',
+    lbCalGoogle:'Google Calendar', lbCalApple:'Apple / iCal',
+    lbFwdEmail:'दूसरे ईमेल पर भेजें', lbFwdBtn:'भेजें',
+    fwdSuccess:'✅ भेज दिया! इनबॉक्स देखें', fwdFail:'नहीं भेजा जा सका। फिर कोशिश करें।',
     saveBannerTitle:'📧 पुष्टि ईमेल भेज दी गई है! QR कोड संलग्न है।',
     saveBannerSub:'अपने इनबॉक्स में कतार पास देखें। आसान ऑफलाइन एक्सेस के लिए नीचे से डाउनलोड करें या स्क्रीनशॉट लें।',
     screenshotHint:'💡 डाउनलोड नहीं हो रहा? स्क्रीनशॉट लें — QR कोड और कतार नंबर दोनों तरह से मान्य हैं। पुष्टि के लिए अपना ईमेल देखें।',
@@ -1114,8 +1189,25 @@ function showConfirmation(reg){
   document.getElementById('confirmSection').classList.add('show');
   window.scrollTo({top:0,behavior:'smooth'});
   const t=TX[lang];
-  ['confirmTitle','confirmSub','lbQueueNum','lbQueueHint','lbDownload'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t[id];});
+  ['confirmTitle','confirmSub','lbQueueNum','lbQueueHint','lbDownload',
+   'lbCopyQ','lbShareWA','lbShareCal','lbShareMap','lbShareNative',
+   'lbCalGoogle','lbCalApple','lbFwdEmail','lbFwdBtn'].forEach(id=>{
+    const el=document.getElementById(id);if(el&&t[id])el.textContent=t[id];
+  });
   document.getElementById('displayQueue').textContent=reg.queueNumber;
+
+  // Wire up Google Calendar link with current queue number
+  const gcLink = document.getElementById('googleCalLink');
+  if (gcLink) gcLink.href = buildGoogleCalURL();
+
+  // Show Web Share button only if API is available
+  const nativeBtn = document.getElementById('nativeShareBtn');
+  if (nativeBtn) nativeBtn.style.display = navigator.share ? 'inline-flex' : 'none';
+
+  // Reset forward section
+  document.getElementById('fwdEmailInput').value = '';
+  document.getElementById('fwdStatus').textContent = '';
+  document.getElementById('calMenu').style.display = 'none';
 
   // Generate QR code (encodes queue number only)
   const qrDiv=document.getElementById('qrCodeDiv');
@@ -1472,6 +1564,140 @@ const CONTACT_SUBJ_LABEL = {
 };
 
 let activeSubject = null;
+
+// ── Copy queue number ─────────────────────────────────────────────────────────
+function copyQueue() {
+  const qnum = document.getElementById('displayQueue').textContent;
+  const btn  = document.getElementById('copyQBtn');
+  navigator.clipboard.writeText(qnum).then(() => {
+    btn.innerHTML = '✅ <span id="lbCopyQ">' + (TX[lang].copied || 'Copied!') + '</span>';
+    btn.classList.add('copied');
+    setTimeout(() => {
+      btn.innerHTML = '📋 <span id="lbCopyQ">' + (TX[lang].lbCopyQ || 'Copy') + '</span>';
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(() => {
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = qnum; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); } catch(_) {}
+    document.body.removeChild(ta);
+  });
+}
+
+// ── QR tap-to-zoom ────────────────────────────────────────────────────────────
+function zoomQR() {
+  const qrDiv = document.getElementById('qrCodeDiv');
+  const src   = qrDiv.querySelector('canvas') || qrDiv.querySelector('img');
+  if (!src) return;
+  const dataUrl = src.tagName === 'CANVAS' ? src.toDataURL() : src.src;
+  document.getElementById('qrZoomImg').src = dataUrl;
+  document.getElementById('qrZoomOverlay').classList.add('open');
+}
+function closeQRZoom() {
+  document.getElementById('qrZoomOverlay').classList.remove('open');
+}
+
+// ── WhatsApp share ────────────────────────────────────────────────────────────
+function shareWhatsApp() {
+  if (!currentReg) return;
+  const msg = '12th International Day of Yoga 2026\n' +
+    '📅 Sunday, 21 June 2026\n' +
+    '📍 Chulalongkorn University Grounds, Bangkok\n' +
+    '🎫 Queue #' + currentReg.queueNumber + '\n' +
+    '⏰ Collection 5:30 AM  |  Yoga 6:30 AM\n' +
+    '👤 ' + currentReg.registrantName;
+  window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+}
+
+// ── Calendar ──────────────────────────────────────────────────────────────────
+function toggleCalMenu() {
+  const m = document.getElementById('calMenu');
+  m.style.display = m.style.display === 'none' ? 'flex' : 'none';
+}
+function buildGoogleCalURL() {
+  const qnum = currentReg ? currentReg.queueNumber : '';
+  return 'https://calendar.google.com/calendar/render?action=TEMPLATE' +
+    '&text=' + encodeURIComponent('12th International Day of Yoga 2026') +
+    '&dates=20260621T053000/20260621T080000' +
+    '&details=' + encodeURIComponent('Queue #' + qnum + '\nCollection from 5:30 AM | Yoga session 6:30 AM') +
+    '&location=' + encodeURIComponent('Chulalongkorn University Grounds, Bangkok, Thailand') +
+    '&ctz=Asia%2FBangkok';
+}
+function downloadICS() {
+  const qnum = currentReg ? currentReg.queueNumber : '';
+  const ics = [
+    'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//IDY2026//EN',
+    'BEGIN:VEVENT',
+    'UID:idy2026-' + qnum + '@12thidythailand',
+    'DTSTART;TZID=Asia/Bangkok:20260621T053000',
+    'DTEND;TZID=Asia/Bangkok:20260621T080000',
+    'SUMMARY:12th International Day of Yoga 2026',
+    'DESCRIPTION:Queue #' + qnum + '\\nCollection 5:30 AM | Yoga 6:30 AM\\nChulalongkorn University Grounds\\, Bangkok',
+    'LOCATION:Chulalongkorn University Grounds\\, Bangkok\\, Thailand',
+    'STATUS:CONFIRMED',
+    'END:VEVENT', 'END:VCALENDAR'
+  ].join('\r\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/calendar;charset=utf-8,' + encodeURIComponent(ics);
+  a.download = 'yoga-day-2026.ics'; a.click();
+}
+
+// ── Venue map ─────────────────────────────────────────────────────────────────
+function openMap() {
+  window.open('https://maps.google.com/maps?q=Chulalongkorn+University+Bangkok+Thailand', '_blank');
+}
+
+// ── Native share (Web Share API) ──────────────────────────────────────────────
+function nativeShare() {
+  if (!navigator.share || !currentReg) return;
+  navigator.share({
+    title: '12th International Day of Yoga 2026',
+    text: 'Queue #' + currentReg.queueNumber + ' | 21 June 2026 | Chulalongkorn University Bangkok | Collection 5:30 AM',
+    url: window.location.href
+  }).catch(() => {});
+}
+
+// ── Forward confirmation to another email ─────────────────────────────────────
+async function forwardPass() {
+  if (!currentReg) return;
+  const email   = document.getElementById('fwdEmailInput').value.trim();
+  const status  = document.getElementById('fwdStatus');
+  const lbBtn   = document.getElementById('lbFwdBtn');
+  const btn     = document.getElementById('fwdBtn');
+  status.textContent = '';
+  if (!email || !email.includes('@')) {
+    status.textContent = TX[lang].contactErrEmail;
+    status.style.color = 'var(--error)';
+    return;
+  }
+  btn.disabled = true; lbBtn.textContent = '⏳';
+  try {
+    await fetch(SCRIPT_URL, {
+      method: 'POST', mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({
+        action: 'resend',
+        toEmail: email,
+        registrantName:    currentReg.registrantName,
+        registrantEmail:   currentReg.registrantEmail,
+        queueNumber:       currentReg.queueNumber,
+        participants:      currentReg.participants,
+        tshirtCounts:      currentReg.tshirtCounts,
+        totalParticipants: currentReg.participants.length,
+        lang: lang
+      })
+    });
+    status.textContent = TX[lang].fwdSuccess || '✅ Sent!';
+    status.style.color = '#059669';
+    document.getElementById('fwdEmailInput').value = '';
+  } catch(e) {
+    status.textContent = TX[lang].fwdFail || 'Could not send. Please try again.';
+    status.style.color = 'var(--error)';
+  }
+  btn.disabled = false; lbBtn.textContent = TX[lang].lbFwdBtn || 'Send';
+}
 
 function pickSubject(btn) {
   document.querySelectorAll('.subj-btn').forEach(b=>b.classList.remove('active'));
