@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>IDY 2026 · Registration Dashboard</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;color:#1A2A3A;min-height:100vh;}
+
+/* ── Auth overlay ── */
+#authOverlay{position:fixed;inset:0;background:#003E7E;display:flex;align-items:center;justify-content:center;z-index:999;}
+.auth-box{background:#fff;border-radius:16px;padding:40px 36px;width:340px;text-align:center;}
+.auth-logo{font-size:40px;margin-bottom:12px;}
+.auth-title{font-size:18px;font-weight:700;color:#003E7E;margin-bottom:4px;}
+.auth-sub{font-size:12px;color:#6B7280;margin-bottom:24px;}
+.auth-box input{width:100%;padding:11px 14px;border:1.5px solid #D1D5DB;border-radius:10px;font-size:14px;outline:none;text-align:center;letter-spacing:2px;}
+.auth-box input:focus{border-color:#0072BB;}
+.auth-btn{width:100%;margin-top:14px;padding:12px;background:#003E7E;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;}
+.auth-btn:hover{background:#0072BB;}
+.auth-err{color:#DC2626;font-size:12px;margin-top:10px;min-height:18px;}
+
+/* ── Header ── */
+.header{background:#003E7E;padding:14px 28px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:100;}
+.header-left h1{color:#fff;font-size:16px;font-weight:700;}
+.header-left p{color:rgba(255,255,255,0.6);font-size:11px;margin-top:2px;}
+.header-right{display:flex;align-items:center;gap:14px;}
+.live-dot{width:7px;height:7px;border-radius:50%;background:#4ADE80;animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+.refresh-info{color:rgba(255,255,255,0.65);font-size:11px;text-align:right;}
+.event-badge{background:#FDE760;color:#003E7E;font-size:11px;font-weight:800;padding:4px 12px;border-radius:20px;}
+.btn-refresh{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.25);color:#fff;font-size:11px;padding:5px 12px;border-radius:20px;cursor:pointer;}
+.btn-refresh:hover{background:rgba(255,255,255,0.2);}
+
+/* ── Layout ── */
+.main{max-width:1200px;margin:0 auto;padding:20px 20px 40px;}
+
+/* ── KPI cards ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:18px;}
+@media(max-width:900px){.kpi-grid{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:560px){.kpi-grid{grid-template-columns:repeat(2,1fr);}}
+.kpi-card{background:#fff;border-radius:12px;padding:16px 18px;border:1px solid #E5E7EB;}
+.kpi-label{font-size:11px;color:#6B7280;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.kpi-value{font-size:28px;font-weight:800;color:#003E7E;line-height:1;transition:all .4s;}
+.kpi-sub{font-size:11px;color:#6B7280;margin-top:6px;}
+.kpi-sub.up{color:#10B981;}
+.kpi-sub.down{color:#EF4444;}
+
+/* ── Chart cards ── */
+.chart-card{background:#fff;border-radius:12px;padding:18px 20px;border:1px solid #E5E7EB;}
+.chart-title{font-size:13px;font-weight:700;color:#1A2A3A;margin-bottom:4px;}
+.chart-sub{font-size:11px;color:#9CA3AF;margin-bottom:14px;}
+.chart-row{display:grid;gap:14px;margin-bottom:14px;}
+.chart-row.col-3-2{grid-template-columns:3fr 2fr;}
+.chart-row.col-1-1{grid-template-columns:1fr 1fr;}
+@media(max-width:720px){.chart-row.col-3-2,.chart-row.col-1-1{grid-template-columns:1fr;}}
+
+/* ── Language legend ── */
+.lang-legend{display:flex;flex-direction:column;gap:10px;margin-top:8px;}
+.lang-row{display:flex;align-items:center;gap:10px;font-size:13px;}
+.lang-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+.lang-name{color:#6B7280;flex:1;}
+.lang-val{font-weight:700;color:#1A2A3A;}
+
+/* ── Contact & event panels ── */
+.panel-row{display:flex;flex-direction:column;gap:8px;}
+.panel-item{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:#F9FAFB;border-radius:8px;font-size:12px;}
+.panel-item-label{color:#6B7280;}
+.panel-item-val{font-weight:700;color:#003E7E;font-size:14px;}
+.no-data{font-size:12px;color:#9CA3AF;font-style:italic;padding:8px 0;}
+.event-day-note{font-size:11px;color:#9CA3AF;margin-top:10px;padding-top:10px;border-top:1px solid #F0F0F0;}
+
+/* ── Countdown ── */
+.countdown-wrap{background:#003E7E;border-radius:12px;padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.countdown-label{color:rgba(255,255,255,0.6);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;}
+.countdown-units{display:flex;gap:20px;}
+.countdown-unit{text-align:center;}
+.countdown-num{font-size:28px;font-weight:800;color:#FDE760;line-height:1;}
+.countdown-unit-label{font-size:10px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.5px;}
+.countdown-date{color:rgba(255,255,255,0.8);font-size:12px;}
+
+/* ── Contact subjects ── */
+.subject-tag{display:inline-flex;align-items:center;gap:4px;background:#EBF5FB;color:#003E7E;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;margin:2px;}
+
+/* ── Error / loading ── */
+#loadError{display:none;text-align:center;padding:60px 20px;color:#EF4444;font-size:14px;}
+#loadingSpinner{display:none;text-align:center;padding:60px 20px;color:#6B7280;font-size:14px;}
+</style>
+</head>
+<body>
+
+<div id="authOverlay">
+  <div class="auth-box">
+    <div class="auth-logo">🧘</div>
+    <div class="auth-title">IDY 2026 Dashboard</div>
+    <div class="auth-sub">Enter the dashboard key to view live registration data</div>
+    <input type="password" id="passInput" placeholder="Dashboard key" onkeydown="if(event.key==='Enter')login()" />
+    <button class="auth-btn" onclick="login()">Connect →</button>
+    <div class="auth-err" id="authErr"></div>
+  </div>
+</div>
+
+<div id="dashboardWrap" style="display:none;">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>🧘 IDY 2026 · Registration Dashboard</h1>
+      <p>12th International Day of Yoga · Chulalongkorn University, Bangkok</p>
+    </div>
+    <div class="header-right">
+      <div id="liveIndicator" style="display:flex;align-items:center;gap:6px;">
+        <div class="live-dot"></div>
+        <div class="refresh-info">
+          <div id="lastUpdated">Loading…</div>
+          <div id="nextRefresh"></div>
+        </div>
+      </div>
+      <button class="btn-refresh" onclick="loadData()">↻ Refresh</button>
+      <div class="event-badge" id="eventBadge">— days to go</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div id="loadingSpinner">Loading live data…</div>
+    <div id="loadError"></div>
+
+    <div id="dashContent" style="display:none;">
+
+      <div class="countdown-wrap">
+        <div>
+          <div class="countdown-label">Countdown to IDY 2026</div>
+          <div class="countdown-date">Sunday, 21 June 2026 · 6:30 AM</div>
+        </div>
+        <div class="countdown-units">
+          <div class="countdown-unit"><div class="countdown-num" id="cdDays">--</div><div class="countdown-unit-label">Days</div></div>
+          <div class="countdown-unit"><div class="countdown-num" id="cdHours">--</div><div class="countdown-unit-label">Hours</div></div>
+          <div class="countdown-unit"><div class="countdown-num" id="cdMins">--</div><div class="countdown-unit-label">Mins</div></div>
+          <div class="countdown-unit"><div class="countdown-num" id="cdSecs">--</div><div class="countdown-unit-label">Secs</div></div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">Total registered</div>
+          <div class="kpi-value" id="kpiTotal">—</div>
+          <div class="kpi-sub" id="kpiTotalSub">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Today</div>
+          <div class="kpi-value" id="kpiToday">—</div>
+          <div class="kpi-sub" id="kpiTodaySub">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">This week</div>
+          <div class="kpi-value" id="kpiWeek">—</div>
+          <div class="kpi-sub" id="kpiWeekSub">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Total participants</div>
+          <div class="kpi-value" id="kpiParts">—</div>
+          <div class="kpi-sub" id="kpiPartsSub">—</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Collected</div>
+          <div class="kpi-value" id="kpiCollected">—</div>
+          <div class="kpi-sub" id="kpiCollectedSub">Event day</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;">
+        <div class="chart-card">
+          <div class="chart-title">Registrations by hour · today</div>
+          <div class="chart-sub" id="hourlyChartSub">Bangkok time (UTC+7)</div>
+          <div style="position:relative;width:100%;height:220px;">
+            <canvas id="hourlyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-row col-3-2" style="margin-bottom:14px;">
+        <div class="chart-card">
+          <div class="chart-title">Cumulative registrations</div>
+          <div class="chart-sub">Last 31 days</div>
+          <div style="position:relative;width:100%;height:210px;">
+            <canvas id="cumulativeChart"></canvas>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">T-shirt size breakdown</div>
+          <div class="chart-sub">Total items by size</div>
+          <div style="position:relative;width:100%;height:210px;">
+            <canvas id="sizeChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-row col-1-1">
+        <div class="chart-card">
+          <div class="chart-title">Language preference</div>
+          <div class="chart-sub">Portal language selected at registration</div>
+          <div style="display:flex;align-items:center;gap:24px;margin-top:8px;">
+            <div style="position:relative;width:130px;height:130px;flex-shrink:0;">
+              <canvas id="langChart"></canvas>
+            </div>
+            <div class="lang-legend" id="langLegend"></div>
+          </div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">Interactions</div>
+          <div class="chart-sub">Contact form enquiries received</div>
+          <div class="panel-row" id="contactPanel"></div>
+          <div class="event-day-note" id="chatbotNote">
+            ℹ Chatbot conversations and FAQ tab clicks are browser-side only and are not logged to the server. Only contact form submissions are counted here.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script>
+Chart.register(ChartDataLabels);
+
+const SCRIPT_URL   = 'https://script.google.com/macros/s/AKfycbxliVugP1XsA_TjQjRmoOwG4OSi_p6KzRnJx9VB6EyADaNc55TcUTXZuy-8yErwDhxV/exec';
+const EVENT_DATE   = new Date('2026-06-21T06:30:00+07:00');
+const REFRESH_SECS = 60;
+const SIZES        = ['S','M','L','XL','XXL'];
+const LANG_COLORS  = { en: '#0072BB', th: '#1D9E75', hi: '#BA7517' };
+const LANG_NAMES   = { en: 'English', th: 'Thai', hi: 'Hindi' };
+
+let dashPass = '';
+let charts   = {};
+let refreshCountdown = REFRESH_SECS;
+let refreshInterval, countdownInterval;
+
+function login() {
+  const pass = document.getElementById('passInput').value.trim();
+  if (!pass) return;
+  dashPass = pass;
+  document.getElementById('authErr').textContent = '';
+  loadData();
+}
+
+async function loadData() {
+  const spinner = document.getElementById('loadingSpinner');
+  const errEl   = document.getElementById('loadError');
+  const content = document.getElementById('dashContent');
+  spinner.style.display = 'block';
+  errEl.style.display = 'none';
+
+  try {
+    const url  = SCRIPT_URL + '?action=dashboard&pass=' + encodeURIComponent(dashPass);
+    const resp = await fetch(url);
+    const json = await resp.json();
+
+    if (json.error) {
+      if (json.error === 'Unauthorized' || json.error === 'Invalid request') {
+        document.getElementById('authErr').textContent = 'Incorrect key — please try again.';
+        document.getElementById('authOverlay').style.display = 'flex';
+        document.getElementById('dashboardWrap').style.display = 'none';
+        spinner.style.display = 'none';
+        return;
+      }
+      throw new Error(json.error);
+    }
+
+    document.getElementById('authOverlay').style.display  = 'none';
+    document.getElementById('dashboardWrap').style.display = 'block';
+    spinner.style.display  = 'none';
+    content.style.display  = 'block';
+    errEl.style.display    = 'none';
+
+    renderDashboard(json);
+
+    const updTime = new Date(json.generatedAt);
+    document.getElementById('lastUpdated').textContent =
+      'Updated ' + updTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Bangkok' }) + ' BKK';
+
+    refreshCountdown = REFRESH_SECS;
+    clearInterval(refreshInterval);
+    clearInterval(countdownInterval);
+    refreshInterval   = setInterval(loadData, REFRESH_SECS * 1000);
+    countdownInterval = setInterval(tickCountdown, 1000);
+
+  } catch (err) {
+    spinner.style.display = 'none';
+    errEl.style.display   = 'block';
+    errEl.textContent     = 'Failed to load data: ' + err.message;
+  }
+}
+
+function tickCountdown() {
+  refreshCountdown--;
+  if (refreshCountdown < 0) refreshCountdown = REFRESH_SECS;
+  document.getElementById('nextRefresh').textContent = 'Refreshing in ' + refreshCountdown + 's';
+}
+
+function updateCountdown() {
+  const now  = new Date();
+  const diff = EVENT_DATE - now;
+  if (diff <= 0) {
+    ['cdDays','cdHours','cdMins','cdSecs'].forEach(id => document.getElementById(id).textContent = '0');
+    return;
+  }
+  const days  = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins  = Math.floor((diff % 3600000) / 60000);
+  const secs  = Math.floor((diff % 60000) / 1000);
+  document.getElementById('cdDays').textContent  = days;
+  document.getElementById('cdHours').textContent = String(hours).padStart(2, '0');
+  document.getElementById('cdMins').textContent  = String(mins).padStart(2, '0');
+  document.getElementById('cdSecs').textContent  = String(secs).padStart(2, '0');
+  document.getElementById('eventBadge').textContent = days + ' days to go';
+}
+setInterval(updateCountdown, 1000);
+updateCountdown();
+
+function animateNum(id, newVal) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const start = parseInt(el.textContent.replace(/\D/g, '')) || 0;
+  const end   = parseInt(newVal) || 0;
+  if (start === end) { el.textContent = newVal.toLocaleString ? newVal.toLocaleString() : newVal; return; }
+  const dur = 600, step = 16;
+  let elapsed = 0;
+  const t = setInterval(() => {
+    elapsed += step;
+    const pct = Math.min(elapsed / dur, 1);
+    el.textContent = Math.round(start + (end - start) * pct).toLocaleString();
+    if (pct >= 1) clearInterval(t);
+  }, step);
+}
+
+function renderDashboard(d) {
+  const todayDiff = d.today - d.yesterday;
+  animateNum('kpiTotal', d.totalRegistrations);
+  document.getElementById('kpiTotalSub').textContent = 'This week +' + d.thisWeek;
+  animateNum('kpiToday', d.today);
+  const sub = document.getElementById('kpiTodaySub');
+  sub.textContent = (todayDiff >= 0 ? '▲ +' : '▼ ') + Math.abs(todayDiff) + ' vs yesterday';
+  sub.className   = 'kpi-sub ' + (todayDiff >= 0 ? 'up' : 'down');
+  animateNum('kpiWeek', d.thisWeek);
+  document.getElementById('kpiWeekSub').textContent = 'Mon – today';
+  animateNum('kpiParts', d.totalParticipants);
+  document.getElementById('kpiPartsSub').textContent = 'Avg group ' + d.avgGroupSize + ' persons';
+  animateNum('kpiCollected', d.collected);
+  document.getElementById('kpiCollectedSub').textContent = d.collected > 0
+    ? Math.round(d.collected / d.totalRegistrations * 100) + '% collected'
+    : 'Activates 21 Jun';
+
+  renderHourly(d.hourlyToday);
+  renderCumulative(d.dailyData);
+  renderSizes(d.sizeBreakdown);
+  renderLanguage(d.languageBreakdown);
+  renderContact(d.contactTotal, d.contactBySubject);
+}
+
+function getOrCreate(id, type, data, options) {
+  if (charts[id]) {
+    charts[id].data = data;
+    charts[id].update('active');
+    return;
+  }
+  charts[id] = new Chart(document.getElementById(id), { type, data, options });
+}
+
+function renderHourly(hourlyToday) {
+  const labels = [], vals = [];
+  for (let h = 0; h < 24; h++) {
+    labels.push(h === 0 ? '12am' : h < 12 ? h + 'am' : h === 12 ? '12pm' : (h - 12) + 'pm');
+    vals.push(hourlyToday[h] || 0);
+  }
+  const maxH = Math.max(...vals);
+  const bgColors = vals.map(v => v === maxH && maxH > 0 ? '#003E7E' : '#B5D4F4');
+  getOrCreate('hourlyChart', 'bar',
+    { labels, datasets: [{ data: vals, backgroundColor: bgColors, borderRadius: 4, borderSkipped: false }] },
+    {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
+          anchor: 'end', align: 'end', offset: 2,
+          formatter: v => v,
+          font: { size: 10, weight: 'bold' },
+          color: '#003E7E'
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#9CA3AF', font: { size: 10 }, maxRotation: 0 } },
+        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#9CA3AF', font: { size: 11 }, stepSize: 1, precision: 0 }, beginAtZero: true }
+      },
+      layout: { padding: { top: 20 } }
+    }
+  );
+}
+
+function renderCumulative(dailyData) {
+  const labels = dailyData.map(d => d.label);
+  const cumVals = dailyData.map(d => d.cumulative);
+  const dayVals = dailyData.map(d => d.count);
+  getOrCreate('cumulativeChart', 'line',
+    {
+      labels,
+      datasets: [
+        { label: 'Cumulative', data: cumVals, borderColor: '#0072BB', backgroundColor: 'rgba(0,114,187,0.07)', borderWidth: 2.5, fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: '#003E7E', yAxisID: 'yCum' },
+        { label: 'Daily', data: dayVals, borderColor: '#B5D4F4', backgroundColor: 'rgba(181,212,244,0.3)', borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 0, type: 'bar', yAxisID: 'yDay' }
+      ]
+    },
+    {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        datalabels: { display: false },
+        tooltip: { mode: 'index', intersect: false }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { color: '#9CA3AF', font: { size: 10 }, maxTicksLimit: 8, autoSkip: true } },
+        yCum: { position: 'left', grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#9CA3AF', font: { size: 11 } }, beginAtZero: true },
+        yDay: { position: 'right', grid: { display: false }, ticks: { color: '#B5D4F4', font: { size: 10 } }, beginAtZero: true }
+      }
+    }
+  );
+}
+
+function renderSizes(sizeBreakdown) {
+  const vals  = SIZES.map(s => sizeBreakdown[s] || 0);
+  const total = vals.reduce((a, b) => a + b, 0) || 1;
+  const blues = ['#B5D4F4', '#6EB3EB', '#378ADD', '#185FA5', '#003E7E'];
+  getOrCreate('sizeChart', 'bar',
+    { labels: SIZES, datasets: [{ data: vals, backgroundColor: blues, borderRadius: 4, borderSkipped: false }] },
+    {
+      responsive: true, maintainAspectRatio: false, indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        datalabels: {
+          anchor: 'end', align: 'end', offset: 6,
+          formatter: (v, ctx) => v > 0 ? v.toLocaleString() + '  (' + Math.round(v / total * 100) + '%)' : '',
+          font: { size: 11, weight: 'bold' },
+          color: '#003E7E'
+        }
+      },
+      scales: {
+        x: { display: false, beginAtZero: true },
+        y: { grid: { display: false }, ticks: { color: '#374151', font: { size: 13, weight: 'bold' } } }
+      },
+      layout: { padding: { right: 100 } }
+    }
+  );
+}
+
+function renderLanguage(langBreakdown) {
+  const langs = ['en', 'th', 'hi'];
+  const vals  = langs.map(l => langBreakdown[l] || 0);
+  const total = vals.reduce((a, b) => a + b, 0) || 1;
+  const colors = langs.map(l => LANG_COLORS[l]);
+  getOrCreate('langChart', 'doughnut',
+    { labels: langs.map(l => LANG_NAMES[l]), datasets: [{ data: vals, backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }] },
+    {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        datalabels: { display: false }
+      }
+    }
+  );
+  const legend = document.getElementById('langLegend');
+  legend.innerHTML = langs.map((l, i) => `
+    <div class="lang-row">
+      <span class="lang-dot" style="background:${LANG_COLORS[l]};"></span>
+      <span class="lang-name">${LANG_NAMES[l]}</span>
+      <span class="lang-val">${vals[i].toLocaleString()} <span style="color:#9CA3AF;font-weight:400;">(${Math.round(vals[i]/total*100)}%)</span></span>
+    </div>`).join('');
+}
+
+function renderContact(total, bySubject) {
+  const panel = document.getElementById('contactPanel');
+  if (total === 0) {
+    panel.innerHTML = '<div class="no-data">No enquiries received yet.</div>';
+    return;
+  }
+  let html = `<div class="panel-item"><span class="panel-item-label">Total enquiries</span><span class="panel-item-val">${total}</span></div>`;
+  if (bySubject && Object.keys(bySubject).length) {
+    html += '<div style="margin-top:8px;font-size:11px;color:#6B7280;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">By subject</div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+    Object.entries(bySubject).sort((a,b) => b[1]-a[1]).forEach(([s, c]) => {
+      html += `<span class="subject-tag">${s} · ${c}</span>`;
+    });
+    html += '</div>';
+  }
+  panel.innerHTML = html;
+}
+</script>
+</body>
+</html>
