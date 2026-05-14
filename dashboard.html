@@ -167,34 +167,14 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;color:#1A2A3A;mi
         </div>
       </div>
 
-      <div style="margin-bottom:14px;">
-        <div class="chart-card">
-          <div class="chart-title">Registrations by hour · today</div>
-          <div class="chart-sub" id="hourlyChartSub">Bangkok time (UTC+7)</div>
-          <div style="position:relative;width:100%;height:220px;">
-            <canvas id="hourlyChart"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <div class="chart-row col-3-2" style="margin-bottom:14px;">
-        <div class="chart-card">
-          <div class="chart-title">Cumulative registrations</div>
-          <div class="chart-sub">Last 31 days</div>
-          <div style="position:relative;width:100%;height:210px;">
-            <canvas id="cumulativeChart"></canvas>
-          </div>
-        </div>
+      <div class="chart-row col-1-1" style="margin-bottom:14px;">
         <div class="chart-card">
           <div class="chart-title">T-shirt size breakdown</div>
-          <div class="chart-sub">Total items by size</div>
+          <div class="chart-sub" id="sizeTotalSub">Total participants</div>
           <div style="position:relative;width:100%;height:210px;">
             <canvas id="sizeChart"></canvas>
           </div>
         </div>
-      </div>
-
-      <div class="chart-row col-1-1">
         <div class="chart-card">
           <div class="chart-title">Language preference</div>
           <div class="chart-sub">Portal language selected at registration</div>
@@ -203,14 +183,6 @@ body{font-family:'Segoe UI',Arial,sans-serif;background:#F0F4F8;color:#1A2A3A;mi
               <canvas id="langChart"></canvas>
             </div>
             <div class="lang-legend" id="langLegend"></div>
-          </div>
-        </div>
-        <div class="chart-card">
-          <div class="chart-title">Interactions</div>
-          <div class="chart-sub">Contact form enquiries received</div>
-          <div class="panel-row" id="contactPanel"></div>
-          <div class="event-day-note" id="chatbotNote">
-            ℹ Chatbot conversations and FAQ tab clicks are browser-side only and are not logged to the server. Only contact form submissions are counted here.
           </div>
         </div>
       </div>
@@ -351,11 +323,8 @@ function renderDashboard(d) {
     ? Math.round(d.collected / d.totalRegistrations * 100) + '% collected'
     : 'Activates 21 Jun';
 
-  renderHourly(d.hourlyToday);
-  renderCumulative(d.dailyData);
   renderSizes(d.sizeBreakdown);
   renderLanguage(d.languageBreakdown);
-  renderContact(d.contactTotal, d.contactBySubject);
 }
 
 function getOrCreate(id, type, data, options) {
@@ -367,68 +336,12 @@ function getOrCreate(id, type, data, options) {
   charts[id] = new Chart(document.getElementById(id), { type, data, options });
 }
 
-function renderHourly(hourlyToday) {
-  const labels = [], vals = [];
-  for (let h = 0; h < 24; h++) {
-    labels.push(h === 0 ? '12am' : h < 12 ? h + 'am' : h === 12 ? '12pm' : (h - 12) + 'pm');
-    vals.push(hourlyToday[h] || 0);
-  }
-  const maxH = Math.max(...vals);
-  const bgColors = vals.map(v => v === maxH && maxH > 0 ? '#003E7E' : '#B5D4F4');
-  getOrCreate('hourlyChart', 'bar',
-    { labels, datasets: [{ data: vals, backgroundColor: bgColors, borderRadius: 4, borderSkipped: false }] },
-    {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        datalabels: {
-          display: ctx => ctx.dataset.data[ctx.dataIndex] > 0,
-          anchor: 'end', align: 'end', offset: 2,
-          formatter: v => v,
-          font: { size: 10, weight: 'bold' },
-          color: '#003E7E'
-        }
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { color: '#9CA3AF', font: { size: 10 }, maxRotation: 0 } },
-        y: { grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#9CA3AF', font: { size: 11 }, stepSize: 1, precision: 0 }, beginAtZero: true }
-      },
-      layout: { padding: { top: 20 } }
-    }
-  );
-}
-
-function renderCumulative(dailyData) {
-  const labels = dailyData.map(d => d.label);
-  const cumVals = dailyData.map(d => d.cumulative);
-  const dayVals = dailyData.map(d => d.count);
-  getOrCreate('cumulativeChart', 'line',
-    {
-      labels,
-      datasets: [
-        { label: 'Cumulative', data: cumVals, borderColor: '#0072BB', backgroundColor: 'rgba(0,114,187,0.07)', borderWidth: 2.5, fill: true, tension: 0.4, pointRadius: 0, pointHoverRadius: 5, pointHoverBackgroundColor: '#003E7E', yAxisID: 'yCum' },
-        { label: 'Daily', data: dayVals, borderColor: '#B5D4F4', backgroundColor: 'rgba(181,212,244,0.3)', borderWidth: 1.5, fill: true, tension: 0.4, pointRadius: 0, type: 'bar', yAxisID: 'yDay' }
-      ]
-    },
-    {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        datalabels: { display: false },
-        tooltip: { mode: 'index', intersect: false }
-      },
-      scales: {
-        x: { grid: { display: false }, ticks: { color: '#9CA3AF', font: { size: 10 }, maxTicksLimit: 8, autoSkip: true } },
-        yCum: { position: 'left', grid: { color: 'rgba(0,0,0,0.05)' }, ticks: { color: '#9CA3AF', font: { size: 11 } }, beginAtZero: true },
-        yDay: { position: 'right', grid: { display: false }, ticks: { color: '#B5D4F4', font: { size: 10 } }, beginAtZero: true }
-      }
-    }
-  );
-}
-
 function renderSizes(sizeBreakdown) {
   const vals  = SIZES.map(s => sizeBreakdown[s] || 0);
-  const total = vals.reduce((a, b) => a + b, 0) || 1;
+  const total = vals.reduce((a, b) => a + b, 0);
+  const subEl = document.getElementById('sizeTotalSub');
+  if (subEl) subEl.textContent = 'Total participants: ' + total.toLocaleString();
+  const totalForPct = total || 1;
   const blues = ['#B5D4F4', '#6EB3EB', '#378ADD', '#185FA5', '#003E7E'];
   getOrCreate('sizeChart', 'bar',
     { labels: SIZES, datasets: [{ data: vals, backgroundColor: blues, borderRadius: 4, borderSkipped: false }] },
@@ -438,7 +351,7 @@ function renderSizes(sizeBreakdown) {
         legend: { display: false },
         datalabels: {
           anchor: 'end', align: 'end', offset: 6,
-          formatter: (v, ctx) => v > 0 ? v.toLocaleString() + '  (' + Math.round(v / total * 100) + '%)' : '',
+          formatter: (v, ctx) => v > 0 ? v.toLocaleString() + '  (' + Math.round(v / totalForPct * 100) + '%)' : '',
           font: { size: 11, weight: 'bold' },
           color: '#003E7E'
         }
@@ -476,23 +389,7 @@ function renderLanguage(langBreakdown) {
     </div>`).join('');
 }
 
-function renderContact(total, bySubject) {
-  const panel = document.getElementById('contactPanel');
-  if (total === 0) {
-    panel.innerHTML = '<div class="no-data">No enquiries received yet.</div>';
-    return;
-  }
-  let html = `<div class="panel-item"><span class="panel-item-label">Total enquiries</span><span class="panel-item-val">${total}</span></div>`;
-  if (bySubject && Object.keys(bySubject).length) {
-    html += '<div style="margin-top:8px;font-size:11px;color:#6B7280;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px;">By subject</div>';
-    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
-    Object.entries(bySubject).sort((a,b) => b[1]-a[1]).forEach(([s, c]) => {
-      html += `<span class="subject-tag">${s} · ${c}</span>`;
-    });
-    html += '</div>';
-  }
-  panel.innerHTML = html;
-}
+
 </script>
 </body>
 </html>
