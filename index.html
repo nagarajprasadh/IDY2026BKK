@@ -583,6 +583,7 @@
         <label class="f-label" for="regEmail"><span id="lbEmail">Email Address</span> <span class="req">*</span></label>
         <input class="f-input" id="regEmail" type="email" autocomplete="email" placeholder="yourname@email.com" inputmode="email" lang="en">
         <div class="f-err" id="errEmail">Please enter a valid email address</div>
+        <div id="emailTypoHint" style="display:none;font-size:12px;color:#0072BB;margin-top:4px;cursor:pointer;"></div>
       </div>
     </div>
 
@@ -751,6 +752,7 @@
       <div id="contactFormFields" style="display:none;">
         <input  class="contact-field" id="cName"    type="text"  placeholder="Your name" autocomplete="name">
         <input  class="contact-field" id="cEmail"   type="email" placeholder="Your email address" autocomplete="email">
+        <div id="cEmailTypoHint" style="display:none;font-size:12px;color:#0072BB;margin-top:-6px;margin-bottom:6px;cursor:pointer;"></div>
         <input  class="contact-field" id="cSubjTxt" type="text"  placeholder="Subject" readonly style="background:var(--surface);color:var(--primary);font-weight:600;">
         <textarea class="contact-field" id="cMsg"   placeholder="Your message…"></textarea>
         <div id="contactAlert" style="font-size:12px;color:var(--error);margin-bottom:8px;display:none;"></div>
@@ -870,6 +872,7 @@ const TX = {
     lbDownload:'Download Queue Pass',
     overlayMsg:'Processing your registration…',
     errName:'Please enter your full name', errEmail:'Please enter a valid email address',
+    emailDidYouMean:'Did you mean {domain}? (tap to fix)',
     errSelfSize:'Please select a size',
     errNeedPart:'Please tick "I am participating" or add at least one participant.',
     errPName:"Please enter participant's name", errPSize:'Please select a size',
@@ -971,6 +974,7 @@ const TX = {
     lbDownload:'ดาวน์โหลดบัตรคิว',
     overlayMsg:'กำลังประมวลผลการลงทะเบียน…',
     errName:'กรุณากรอกชื่อ-นามสกุล', errEmail:'กรุณากรอกอีเมลที่ถูกต้อง',
+    emailDidYouMean:'คุณหมายถึง {domain} ใช่ไหม? (แตะเพื่อแก้ไข)',
     errSelfSize:'กรุณาเลือกขนาด',
     errNeedPart:'กรุณาเลือก "ฉันเข้าร่วม" หรือเพิ่มผู้เข้าร่วมอย่างน้อย 1 คน',
     errPName:'กรุณากรอกชื่อผู้เข้าร่วม', errPSize:'กรุณาเลือกขนาด',
@@ -1070,6 +1074,7 @@ const TX = {
     lbDownload:'कतार पास डाउनलोड करें',
     overlayMsg:'आपका पंजीकरण हो रहा है…',
     errName:'कृपया अपना पूरा नाम दर्ज करें', errEmail:'कृपया सही ईमेल दर्ज करें',
+    emailDidYouMean:'क्या आपका मतलब {domain} था? (ठीक करने के लिए टैप करें)',
     errSelfSize:'कृपया साइज़ चुनें',
     errNeedPart:'कृपया "मैं भाग लेता हूँ" चुनें या कम से कम एक प्रतिभागी जोड़ें।',
     errPName:'कृपया प्रतिभागी का नाम दर्ज करें', errPSize:'कृपया साइज़ चुनें',
@@ -1253,6 +1258,57 @@ function toggleFaq(btn){
 
 function isEmail(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());}
 function setFE(fid,eid,bad){document.getElementById(fid)?.classList.toggle('invalid',bad);document.getElementById(eid)?.classList.toggle('show',bad);}
+
+// ── Email domain typo suggester ───────────────────────────────────────────────
+const KNOWN_DOMAINS = [
+  'gmail.com','yahoo.com','hotmail.com','outlook.com','icloud.com',
+  'live.com','msn.com','me.com','mac.com','googlemail.com',
+  'yahoo.co.th','hotmail.co.th','outlook.co.th',
+  'rediffmail.com','yahoo.co.in','hotmail.co.in',
+  'true.th','dtac.th','ais.th','one.th'
+];
+function levenshtein(a,b){
+  const m=a.length,n=b.length;
+  const dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i===0?j:j===0?i:0));
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++)
+    dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+function suggestDomain(email){
+  const at=email.lastIndexOf('@');
+  if(at<1) return null;
+  const domain=email.slice(at+1).toLowerCase();
+  if(KNOWN_DOMAINS.includes(domain)) return null; // already correct
+  let best=null,bestDist=Infinity;
+  KNOWN_DOMAINS.forEach(d=>{
+    const dist=levenshtein(domain,d);
+    if(dist<bestDist){bestDist=dist;best=d;}
+  });
+  return bestDist<=2?best:null; // only suggest if very close
+}
+function showEmailHint(inputId,hintId){
+  const input=document.getElementById(inputId);
+  const hint=document.getElementById(hintId);
+  if(!input||!hint) return;
+  const email=input.value.trim();
+  if(!isEmail(email)){hint.style.display='none';return;}
+  const suggestion=suggestDomain(email);
+  if(!suggestion){hint.style.display='none';return;}
+  const tmpl=(TX[lang]&&TX[lang].emailDidYouMean)||'Did you mean {domain}? (tap to fix)';
+  hint.textContent=tmpl.replace('{domain}',suggestion);
+  hint.style.display='block';
+  hint.onclick=()=>{
+    const at=email.lastIndexOf('@');
+    input.value=email.slice(0,at+1)+suggestion;
+    hint.style.display='none';
+    input.focus();
+  };
+}
+// Attach blur listeners after DOM ready
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('regEmail')?.addEventListener('blur',()=>showEmailHint('regEmail','emailTypoHint'));
+  document.getElementById('cEmail')?.addEventListener('blur',()=>showEmailHint('cEmail','cEmailTypoHint'));
+});
 
 function validate(){
   let ok=true;
