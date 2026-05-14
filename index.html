@@ -783,11 +783,7 @@
     </div>
     <button class="chat-close" onclick="toggleChat()">✕</button>
   </div>
-  <div class="chat-lang-row">
-    <button class="chat-lang-btn active" id="clBtn-en" onclick="setChatLang('en')">English</button>
-    <button class="chat-lang-btn"        id="clBtn-th" onclick="setChatLang('th')">ภาษาไทย</button>
-    <button class="chat-lang-btn"        id="clBtn-hi" onclick="setChatLang('hi')">हिंदी</button>
-  </div>
+
   <div class="chat-messages" id="chatMessages"></div>
   <div class="chat-suggestions" id="chatChips"></div>
   <div class="chat-input-row">
@@ -1182,9 +1178,20 @@ function setLang(l) {
   document.getElementById('contactSubmitBtn').textContent = T.contactSend || 'Send Message →';
   document.getElementById('stillNeedLabel').textContent   = T.stillNeedLabel || '';
   document.getElementById('faqHintBox').querySelector('.faq-hint-label').textContent = T.faqHintLabel || '';
-  // Refresh pre-filled subject field if a topic is already chosen
-  if(activeSubject && T.contactSubjs && T.contactSubjs[activeSubject])
-    document.getElementById('cSubjTxt').value = T.contactSubjs[activeSubject];
+  // Sync chatbot language with main page language
+  setChatLang(l);
+  // Refresh hint content and subject field when language switches mid-session
+  if(activeSubject) {
+    const _hints = (CONTACT_FAQ[l] || CONTACT_FAQ.en)[activeSubject] || [];
+    const _cont  = document.getElementById('faqHintContent');
+    if (_hints.length > 0) {
+      _cont.innerHTML = _hints.map(h=>`
+        <div class="faq-hint-q">${esc(h.q)}</div>
+        <div class="faq-hint-a">${esc(h.a)}</div>`).join('');
+    }
+    if(T.contactSubjs && T.contactSubjs[activeSubject])
+      document.getElementById('cSubjTxt').value = T.contactSubjs[activeSubject];
+  }
 }
 
 function toggleSelf() {
@@ -1566,7 +1573,7 @@ function toggleChat() {
 function setChatLang(l) {
   chatLang = l;
   ['en','th','hi'].forEach(x =>
-    document.getElementById('clBtn-'+x).classList.toggle('active', x===l));
+    document.getElementById('clBtn-'+x)?.classList.toggle('active', x===l));
   document.getElementById('chatInput').placeholder =
     l==='th' ? 'พิมพ์คำถามของคุณ…' : l==='hi' ? 'अपना प्रश्न लिखें…' : 'Type your question…';
   updateTooltip(l);
@@ -1638,30 +1645,84 @@ function chatReply(q) {
 
 /* ── CONTACT FORM ──────────────────────────────────────────────────────────── */
 const CONTACT_FAQ = {
-  registration: [
-    {q:'How do I get my queue number and pass?', a:'Your queue number and QR code appear immediately on screen after registration, and a confirmation email is sent to you with the QR code included. Download your Queue Pass or take a screenshot as a backup.'},
-    {q:'How many participants can I register for?', a:'You can register for up to 5 participants total — yourself plus up to 4 additional participants such as family members or friends.'}
-  ],
-  collection: [
-    {q:'When and where do I collect?', a:'Collection starts at 5:30 AM at the collection counter, Chulalongkorn University Grounds. Show your QR code or queue number to the staff.'},
-    {q:'Can someone else collect on my behalf?', a:'Yes. They simply need to show your QR code or queue number at the collection counter.'},
-    {q:'What if I miss the collection window?', a:'Collection runs from 5:30 AM until the yoga session begins. Items are given on a first-come, first-served basis. Uncollected items cannot be reserved after the event.'}
-  ],
-  timing: [
-    {q:'When does the yoga session start?', a:'The main yoga session begins at 6:30 AM. Please arrive early — the venue fills up quickly and collection closes before the session starts.'},
-    {q:'What time should I arrive?', a:'Please arrive at least 30–45 minutes before the session starts (i.e. by 5:45–6:00 AM) to allow time for collection, finding your mat, and settling in.'},
-    {q:'Will yoga mats be provided?', a:'Yes. Yoga mats will be pre-arranged at the venue. Please use the designated mat in your spot.'}
-  ],
-  yoga: [
-    {q:'What should I wear?', a:'Wear comfortable, light, breathable fitness or yoga attire. Avoid tight or heavy clothing. You will practice barefoot on the mat.'},
-    {q:'Should I bring water?', a:'Yes — please carry a personal water bottle and stay hydrated before, during, and after the session.'},
-    {q:'What should I eat before yoga?', a:'Avoid heavy meals for at least 1.5–2 hours before the session. Practice on an empty or light stomach.'}
-  ],
-  eligibility: [
-    {q:'Who can participate?', a:'The session is open to all participants aged 12 years and above, regardless of fitness level or prior yoga experience. Beginners are very welcome.'},
-    {q:'Is prior yoga experience required?', a:'No prior experience is needed. The session follows the Common Yoga Protocol designed for general participants and beginners.'}
-  ],
-  other: []
+  en: {
+    registration: [
+      {q:'How do I get my queue number and pass?', a:'Your queue number and QR code appear immediately on screen after registration, and a confirmation email is sent to you with the QR code included. Download your Queue Pass or take a screenshot as a backup.'},
+      {q:'How many participants can I register for?', a:'You can register for up to 5 participants total — yourself plus up to 4 additional participants such as family members or friends.'}
+    ],
+    collection: [
+      {q:'When and where do I collect?', a:'Collection starts at 5:30 AM at the collection counter, Chulalongkorn University Grounds. Show your QR code or queue number to the staff.'},
+      {q:'Can someone else collect on my behalf?', a:'Yes. They simply need to show your QR code or queue number at the collection counter.'},
+      {q:'What if I miss the collection window?', a:'Collection runs from 5:30 AM until the yoga session begins. Items are given on a first-come, first-served basis. Uncollected items cannot be reserved after the event.'}
+    ],
+    timing: [
+      {q:'When does the yoga session start?', a:'The main yoga session begins at 6:30 AM. Please arrive early — the venue fills up quickly and collection closes before the session starts.'},
+      {q:'What time should I arrive?', a:'Please arrive at least 30–45 minutes before the session starts (i.e. by 5:45–6:00 AM) to allow time for collection, finding your mat, and settling in.'},
+      {q:'Will yoga mats be provided?', a:'Yes. Yoga mats will be pre-arranged at the venue. Please use the designated mat in your spot.'}
+    ],
+    yoga: [
+      {q:'What should I wear?', a:'Wear comfortable, light, breathable fitness or yoga attire. Avoid tight or heavy clothing. You will practice barefoot on the mat.'},
+      {q:'Should I bring water?', a:'Yes — please carry a personal water bottle and stay hydrated before, during, and after the session.'},
+      {q:'What should I eat before yoga?', a:'Avoid heavy meals for at least 1.5–2 hours before the session. Practice on an empty or light stomach.'}
+    ],
+    eligibility: [
+      {q:'Who can participate?', a:'The session is open to all participants aged 12 years and above, regardless of fitness level or prior yoga experience. Beginners are very welcome.'},
+      {q:'Is prior yoga experience required?', a:'No prior experience is needed. The session follows the Common Yoga Protocol designed for general participants and beginners.'}
+    ],
+    other: []
+  },
+  th: {
+    registration: [
+      {q:'ฉันจะรับหมายเลขคิวและบัตรผ่านได้อย่างไร?', a:'หมายเลขคิวและ QR code จะปรากฏทันทีบนหน้าจอหลังจากลงทะเบียน และอีเมลยืนยันจะถูกส่งให้คุณพร้อม QR code ดาวน์โหลดบัตรคิวหรือบันทึกภาพหน้าจอไว้สำรอง'},
+      {q:'ลงทะเบียนได้กี่คน?', a:'คุณสามารถลงทะเบียนได้สูงสุด 5 คน — ตัวคุณเองบวกอีกสูงสุด 4 คน เช่น ครอบครัวหรือเพื่อน'}
+    ],
+    collection: [
+      {q:'รับของที่ไหน เมื่อไหร่?', a:'เริ่มรับของตั้งแต่ 5:30 น. ที่เคาน์เตอร์รับของ สนามจุฬาลงกรณ์มหาวิทยาลัย แสดง QR code หรือหมายเลขคิวแก่เจ้าหน้าที่'},
+      {q:'ให้คนอื่นรับแทนได้ไหม?', a:'ได้ เพียงแค่แสดง QR code หรือหมายเลขคิวของคุณที่เคาน์เตอร์รับของ'},
+      {q:'ถ้าพลาดช่วงเวลารับของจะเป็นอย่างไร?', a:'รับของได้ตั้งแต่ 5:30 น. จนถึงก่อนเริ่มเซสชันโยคะ สิทธิ์รับของเป็นแบบมาก่อนได้ก่อน ของที่ไม่มารับไม่สามารถสำรองไว้หลังงานได้'}
+    ],
+    timing: [
+      {q:'เซสชันโยคะเริ่มกี่โมง?', a:'เซสชันโยคะหลักเริ่มเวลา 6:30 น. กรุณามาก่อน — สถานที่จะเต็มอย่างรวดเร็วและการรับของจะปิดก่อนเริ่มเซสชัน'},
+      {q:'ควรมาถึงกี่โมง?', a:'ควรมาก่อนเริ่มเซสชันอย่างน้อย 30–45 นาที (ประมาณ 5:45–6:00 น.) เพื่อให้มีเวลารับของ หาที่วางเสื่อ และเตรียมตัว'},
+      {q:'มีเสื่อโยคะให้ไหม?', a:'มี เสื่อโยคะจะจัดเตรียมไว้ล่วงหน้าในสถานที่ กรุณาใช้เสื่อที่กำหนดในจุดของคุณ'}
+    ],
+    yoga: [
+      {q:'ควรแต่งกายอย่างไร?', a:'สวมเสื้อผ้าออกกำลังกายหรือโยคะที่สะดวกสบาย เบา และระบายอากาศได้ดี หลีกเลี่ยงเสื้อผ้าที่รัดหรือหนัก คุณจะฝึกโดยไม่สวมรองเท้าบนเสื่อ'},
+      {q:'ควรพกน้ำไปด้วยไหม?', a:'ใช่ — กรุณาพกขวดน้ำส่วนตัวและดื่มน้ำให้เพียงพอก่อน ระหว่าง และหลังเซสชัน'},
+      {q:'ควรทานอาหารอะไรก่อนโยคะ?', a:'หลีกเลี่ยงอาหารมื้อหนักอย่างน้อย 1.5–2 ชั่วโมงก่อนเซสชัน ฝึกเมื่อท้องว่างหรือท้องเบา'}
+    ],
+    eligibility: [
+      {q:'ใครเข้าร่วมได้บ้าง?', a:'เปิดรับผู้เข้าร่วมอายุ 12 ปีขึ้นไปทุกคน ไม่ว่าจะมีระดับสมรรถภาพหรือประสบการณ์โยคะเท่าไร ยินดีต้อนรับผู้เริ่มต้นเป็นอย่างยิ่ง'},
+      {q:'ต้องมีประสบการณ์โยคะมาก่อนไหม?', a:'ไม่จำเป็น เซสชันใช้ Common Yoga Protocol ที่ออกแบบสำหรับผู้เข้าร่วมทั่วไปและผู้เริ่มต้น'}
+    ],
+    other: []
+  },
+  hi: {
+    registration: [
+      {q:'मुझे अपना कतार नंबर और पास कैसे मिलेगा?', a:'पंजीकरण के तुरंत बाद आपका कतार नंबर और QR कोड स्क्रीन पर दिखाई देते हैं, और QR कोड सहित एक पुष्टिकरण ईमेल भेजा जाता है। अपना कतार पास डाउनलोड करें या स्क्रीनशॉट लें।'},
+      {q:'मैं कितने प्रतिभागियों के लिए पंजीकरण कर सकता/सकती हूँ?', a:'आप कुल 5 प्रतिभागियों के लिए पंजीकरण कर सकते हैं — स्वयं सहित 4 अतिरिक्त प्रतिभागी जैसे परिवार या मित्र।'}
+    ],
+    collection: [
+      {q:'संग्रह कब और कहाँ होगा?', a:'संग्रह सुबह 5:30 बजे चुलालोंगकोर्न विश्वविद्यालय परिसर में संग्रह काउंटर पर शुरू होता है। कर्मचारियों को अपना QR कोड या कतार नंबर दिखाएं।'},
+      {q:'क्या कोई और मेरी जगह संग्रह कर सकता है?', a:'हाँ। उन्हें बस संग्रह काउंटर पर आपका QR कोड या कतार नंबर दिखाना होगा।'},
+      {q:'यदि मैं संग्रह का समय चूक जाऊं तो क्या होगा?', a:'संग्रह सुबह 5:30 बजे से योग सत्र शुरू होने तक चलता है। वस्तुएं पहले आओ पहले पाओ के आधार पर दी जाती हैं। कार्यक्रम के बाद असंग्रहित वस्तुएं आरक्षित नहीं की जा सकतीं।'}
+    ],
+    timing: [
+      {q:'योग सत्र कब शुरू होता है?', a:'मुख्य योग सत्र सुबह 6:30 बजे शुरू होता है। कृपया जल्दी आएं — स्थान जल्दी भर जाता है और संग्रह सत्र शुरू होने से पहले बंद हो जाता है।'},
+      {q:'मुझे कितने बजे पहुंचना चाहिए?', a:'कृपया सत्र शुरू होने से कम से कम 30–45 मिनट पहले (यानी 5:45–6:00 बजे तक) पहुंचें ताकि संग्रह, मैट ढूंढने और बसने का समय मिले।'},
+      {q:'क्या योग मैट उपलब्ध होगी?', a:'हाँ। योग मैट स्थल पर पहले से व्यवस्थित होंगी। कृपया अपनी निर्धारित जगह पर मैट का उपयोग करें।'}
+    ],
+    yoga: [
+      {q:'क्या पहनना चाहिए?', a:'आरामदायक, हल्के, सांस लेने योग्य फिटनेस या योग परिधान पहनें। तंग या भारी कपड़ों से बचें। आप मैट पर नंगे पैर अभ्यास करेंगे।'},
+      {q:'क्या पानी लाना चाहिए?', a:'हाँ — व्यक्तिगत पानी की बोतल लाएं और सत्र से पहले, दौरान और बाद में हाइड्रेटेड रहें।'},
+      {q:'योग से पहले क्या खाना चाहिए?', a:'सत्र से कम से कम 1.5–2 घंटे पहले भारी भोजन से बचें। खाली या हल्के पेट पर अभ्यास करें।'}
+    ],
+    eligibility: [
+      {q:'कौन भाग ले सकता है?', a:'यह सत्र 12 वर्ष और उससे अधिक आयु के सभी प्रतिभागियों के लिए खुला है, चाहे उनका फिटनेस स्तर या पूर्व योग अनुभव कुछ भी हो। शुरुआती लोगों का बहुत स्वागत है।'},
+      {q:'क्या पूर्व योग अनुभव आवश्यक है?', a:'नहीं। सत्र Common Yoga Protocol का पालन करता है जो सामान्य प्रतिभागियों और शुरुआती लोगों के लिए डिज़ाइन किया गया है।'}
+    ],
+    other: []
+  }
 };
 
 const CONTACT_SUBJ_LABEL = {
@@ -1811,7 +1872,7 @@ function pickSubject(btn) {
   btn.classList.add('active');
   activeSubject = btn.dataset.subj;
 
-  const hints = CONTACT_FAQ[activeSubject] || [];
+  const hints = (CONTACT_FAQ[lang] || CONTACT_FAQ.en)[activeSubject] || [];
   const box   = document.getElementById('faqHintBox');
   const cont  = document.getElementById('faqHintContent');
   const fields= document.getElementById('contactFormFields');
