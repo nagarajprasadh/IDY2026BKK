@@ -840,7 +840,8 @@
 <canvas id="qCanvas" style="display:none;"></canvas>
 
 <script>
-const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxliVugP1XsA_TjQjRmoOwG4OSi_p6KzRnJx9VB6EyADaNc55TcUTXZuy-8yErwDhxV/exec';
+const SCRIPT_URL    = 'https://script.google.com/macros/s/AKfycbxliVugP1XsA_TjQjRmoOwG4OSi_p6KzRnJx9VB6EyADaNc55TcUTXZuy-8yErwDhxV/exec';
+const PORTAL_TOKEN  = 'IDY2026-portal-v1'; // must match CLIENT_TOKEN in apps-script.gs
 
 const TX = {
   en: {
@@ -1284,7 +1285,7 @@ async function handleSubmit(){
     participants.forEach(p=>pList.push({name:p.name,size:p.size,isRegistrant:false}));
     const tshirtCounts={};
     pList.forEach(p=>{tshirtCounts[p.size]=(tshirtCounts[p.size]||0)+1;});
-    const payload={registrantName:name,registrantEmail:email,isRegistrantParticipant:self,participants:pList,tshirtCounts,totalParticipants:pList.length,lang};
+    const payload={token:PORTAL_TOKEN,registrantName:name,registrantEmail:email,isRegistrantParticipant:self,participants:pList,tshirtCounts,totalParticipants:pList.length,lang};
     const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
     const result=await resp.json();
     if(!result.success) throw new Error(result.error||'Unknown error');
@@ -1845,6 +1846,7 @@ async function forwardPass() {
       method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({
+        token: PORTAL_TOKEN,
         action: 'resend',
         toEmail: email,
         registrantName:    currentReg.registrantName,
@@ -1910,7 +1912,7 @@ async function submitContact() {
     const resp = await fetch(SCRIPT_URL, {
       method:'POST', mode:'no-cors',
       headers:{'Content-Type':'text/plain'},
-      body: JSON.stringify({ action:'contact', name, email, subject:subj, message:msg, lang })
+      body: JSON.stringify({ token:PORTAL_TOKEN, action:'contact', name, email, subject:subj, message:msg, lang })
     });
     document.getElementById('contactFormFields').style.display = 'none';
     document.getElementById('faqHintBox').classList.remove('show');
