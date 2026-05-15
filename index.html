@@ -1342,7 +1342,15 @@ async function handleSubmit(){
     const tshirtCounts={};
     pList.forEach(p=>{tshirtCounts[p.size]=(tshirtCounts[p.size]||0)+1;});
     const payload={token:PORTAL_TOKEN,registrantName:name,registrantEmail:email,isRegistrantParticipant:self,participants:pList,tshirtCounts,totalParticipants:pList.length,lang};
-    const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
+    // FIX: 30-second timeout — prevents hanging forever if Apps Script is slow
+    const _ctrl=new AbortController();
+    const _timer=setTimeout(()=>_ctrl.abort(),30000);
+    let resp;
+    try {
+      resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload),signal:_ctrl.signal});
+    } finally {
+      clearTimeout(_timer);
+    }
     const result=await resp.json();
     if(!result.success) throw new Error(result.error||'Unknown error');
     currentReg={queueNumber:result.queueNumber,registrantName:name,registrantEmail:email,participants:pList,tshirtCounts};
