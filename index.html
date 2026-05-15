@@ -1344,15 +1344,20 @@ async function handleSubmit(){
     pList.forEach(p=>{tshirtCounts[p.size]=(tshirtCounts[p.size]||0)+1;});
     const payload={token:PORTAL_TOKEN,registrantName:name,registrantEmail:email,isRegistrantParticipant:self,participants:pList,tshirtCounts,totalParticipants:pList.length,lang};
     // FIX: 30-second timeout — prevents hanging forever if Apps Script is slow
-    const _ctrl=new AbortController();
-    const _timer=setTimeout(()=>_ctrl.abort(),30000);
-    let resp;
-    try {
-      resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload),signal:_ctrl.signal});
-    } finally {
-      clearTimeout(_timer);
-    }
-    const result=await resp.json();
+    const result = await new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      const timer = setTimeout(() => { xhr.abort(); reject(new Error('Request timed out — please try again')); }, 30000);
+      xhr.open('POST', SCRIPT_URL, true);
+      xhr.setRequestHeader('Content-Type', 'text/plain');
+      xhr.onload = function() {
+        clearTimeout(timer);
+        try { resolve(JSON.parse(xhr.responseText)); }
+        catch(e) { reject(new Error('Server response error')); }
+      };
+      xhr.onerror = function() { clearTimeout(timer); reject(new Error('Network error — please check connection')); };
+      xhr.onabort = function() { clearTimeout(timer); reject(new Error('Request timed out — please try again')); };
+      xhr.send(JSON.stringify(payload));
+    });
     if(!result.success) throw new Error(result.error||'Unknown error');
     currentReg={queueNumber:result.queueNumber,registrantName:name,registrantEmail:email,participants:pList,tshirtCounts};
     hideOverlay(); showConfirmation(currentReg);
