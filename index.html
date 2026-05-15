@@ -652,8 +652,8 @@
       <div class="save-banner">
         <span class="save-banner-icon">📱</span>
         <div class="save-banner-text">
-          <strong id="saveBannerTitle">📧 Confirmation email sent! Your QR code is included.</strong>
-          <span id="saveBannerSub">Check your inbox for your queue pass. Also download it below or screenshot this page as a backup.</span>
+          <strong id="saveBannerTitle">📱 Registration confirmed! Screenshot or download your QR code below.</strong>
+          <span id="saveBannerSub">Download your queue pass or screenshot this page. Show the QR code or queue number at the collection counter on the day.</span>
         </div>
       </div>
 
@@ -693,7 +693,7 @@
 
       <!-- Forward to another email -->
       <div class="fwd-section">
-        <div class="fwd-label" id="lbFwdEmail">Forward confirmation to another email</div>
+        <div class="fwd-label" id="lbFwdEmail">Send queue pass to another email (optional)</div>
         <div class="fwd-row">
           <input class="fwd-input" id="fwdEmailInput" type="email" placeholder="email@example.com" autocomplete="email">
           <button class="fwd-btn" id="fwdBtn" onclick="forwardPass()"><span id="lbFwdBtn">Send</span></button>
@@ -701,7 +701,7 @@
         <div class="fwd-status" id="fwdStatus"></div>
       </div>
 
-      <p class="screenshot-hint" id="screenshotHint">💡 Check your email — it includes your QR code and queue pass. No download button? Screenshot this page as a backup.</p>
+      <p class="screenshot-hint" id="screenshotHint">💡 Screenshot this page or tap Download — your QR code and queue number are all you need at the collection counter.</p>
     </div>
   </div>
 
@@ -898,22 +898,22 @@ const TX = {
     lbCopyQ:'Copy', copied:'Copied!',
     lbShareWA:'WhatsApp', lbShareCal:'Calendar', lbShareMap:'Directions', lbShareNative:'Share / Save',
     lbCalGoogle:'Google Calendar', lbCalApple:'Apple / iCal',
-    lbFwdEmail:'Forward confirmation to another email', lbFwdBtn:'Send',
-    fwdSuccess:'✅ Sent! Check the inbox.', fwdFail:'Could not send. Please try again.',
-    saveBannerTitle:'📧 Confirmation email sent! Your QR code is included.',
-    saveBannerSub:'Check your inbox for your queue pass. Also download it below or screenshot this page as a backup for easy offline access on the day.',
-    screenshotHint:'💡 No download button? Screenshot this page — your QR code and queue number are valid either way. Check your email for the full confirmation with QR code.',
+    lbFwdEmail:'Send queue pass to another email (optional)', lbFwdBtn:'Send',
+    fwdSuccess:'✅ Sent! Check the inbox.', fwdFail:'Could not send. Please try again — or screenshot this page instead.',
+    saveBannerTitle:'📱 Registration confirmed! Screenshot or download your QR code below.',
+    saveBannerSub:'Download your queue pass or screenshot this page. Show the QR code or queue number at the collection counter on the day.',
+    screenshotHint:'💡 Screenshot this page or tap Download — your QR code and queue number are all you need at the collection counter.',
     faqs:[
       {q:'When does the yoga session start?',
        a:'The main yoga session begins at 6:30 AM. Please arrive early — the venue fills up quickly and collection closes before the session starts.'},
       {q:'When and where do I collect?',
-       a:'Collection starts at 5:30 AM at the collection counter, Chulalongkorn University Grounds. Show your QR code or queue number (from your email or the downloaded queue pass) to the staff.'},
+       a:'Collection starts at 5:30 AM at the collection counter, Chulalongkorn University Grounds. Show your QR code or queue number (from your downloaded queue pass or screenshot) to the staff.'},
       {q:'How many participants can I register for?',
        a:'You can register for up to 5 participants total — yourself plus up to 4 additional participants such as family members or friends.'},
       {q:'Can someone else collect on my behalf?',
        a:'Yes. They simply need to show your QR code or queue number at the collection counter.'},
       {q:'How do I get my queue number and pass?',
-       a:'Your queue number and QR code appear immediately on screen after registration, and a confirmation email is sent to you with the QR code included. Download your Queue Pass or take a screenshot as a backup. Show the QR code at the collection counter and staff will scan it instantly.'},
+       a:'Your queue number and QR code appear immediately on screen after registration. Download your Queue Pass or take a screenshot — this is essential as no confirmation email will be sent. Show the QR code at the collection counter and staff will scan it instantly.'},
       {q:'What if I miss the collection window?',
        a:'Collection runs from 5:30 AM until the yoga session begins. Items are given on a first-come, first-served basis. Uncollected items cannot be reserved after the event.'},
       {q:'Is the event free?',
@@ -1000,11 +1000,11 @@ const TX = {
     lbCopyQ:'คัดลอก', copied:'คัดลอกแล้ว!',
     lbShareWA:'WhatsApp', lbShareCal:'ปฏิทิน', lbShareMap:'เส้นทาง', lbShareNative:'แชร์ / บันทึก',
     lbCalGoogle:'Google Calendar', lbCalApple:'Apple / iCal',
-    lbFwdEmail:'ส่งต่อการยืนยันไปยังอีเมลอื่น', lbFwdBtn:'ส่ง',
-    fwdSuccess:'✅ ส่งแล้ว! กรุณาตรวจกล่องจดหมาย', fwdFail:'ไม่สามารถส่งได้ กรุณาลองใหม่',
-    saveBannerTitle:'📧 ส่งอีเมลยืนยันแล้ว! มี QR code แนบมาด้วย',
-    saveBannerSub:'ตรวจสอบอีเมลของคุณสำหรับบัตรคิว นอกจากนี้ดาวน์โหลดหรือถ่ายภาพหน้าจอเพื่อเป็นสำรองสำหรับการเข้าถึงแบบออฟไลน์ในวันงาน',
-    screenshotHint:'💡 ดาวน์โหลดไม่ได้? ถ่ายภาพหน้าจอก็ได้ — QR code และหมายเลขคิวใช้งานได้เหมือนกัน ตรวจสอบอีเมลของคุณสำหรับการยืนยันพร้อม QR code',
+    lbFwdEmail:'ส่งบัตรคิวไปยังอีเมลอื่น (ไม่บังคับ)', lbFwdBtn:'ส่ง',
+    fwdSuccess:'✅ ส่งแล้ว! กรุณาตรวจกล่องจดหมาย', fwdFail:'ส่งไม่สำเร็จ กรุณาลองใหม่ หรือถ่ายภาพหน้าจอแทน',
+    saveBannerTitle:'📱 ลงทะเบียนสำเร็จ! บันทึกภาพหน้าจอหรือดาวน์โหลด QR code ด้านล่าง',
+    saveBannerSub:'ดาวน์โหลดบัตรคิวหรือถ่ายภาพหน้าจอ แสดง QR code หรือหมายเลขคิวที่เคาน์เตอร์รับของในวันงาน',
+    screenshotHint:'💡 ถ่ายภาพหน้าจอหรือกดดาวน์โหลด — QR code และหมายเลขคิวคือสิ่งที่คุณต้องใช้ที่เคาน์เตอร์รับของ',
     faqs:[
       {q:'กิจกรรมโยคะเริ่มกี่โมง?',
        a:'กิจกรรมโยคะหลักเริ่มเวลา 06:30 น. กรุณามาก่อนเวลา เนื่องจากสถานที่อาจเต็มได้เร็ว และการรับของจะสิ้นสุดก่อนเริ่มกิจกรรม'},
@@ -1100,11 +1100,11 @@ const TX = {
     lbCopyQ:'कॉपी करें', copied:'कॉपी हो गया!',
     lbShareWA:'WhatsApp', lbShareCal:'कैलेंडर', lbShareMap:'रास्ता खोजें', lbShareNative:'शेयर / सेव',
     lbCalGoogle:'Google Calendar', lbCalApple:'Apple / iCal',
-    lbFwdEmail:'दूसरे ईमेल पर भेजें', lbFwdBtn:'भेजें',
-    fwdSuccess:'✅ भेज दिया! इनबॉक्स देखें', fwdFail:'नहीं भेजा जा सका। फिर कोशिश करें।',
-    saveBannerTitle:'📧 पुष्टि ईमेल भेज दी गई है! QR कोड संलग्न है।',
-    saveBannerSub:'अपने इनबॉक्स में कतार पास देखें। आसान ऑफलाइन एक्सेस के लिए नीचे से डाउनलोड करें या स्क्रीनशॉट लें।',
-    screenshotHint:'💡 डाउनलोड नहीं हो रहा? स्क्रीनशॉट लें — QR कोड और कतार नंबर दोनों तरह से मान्य हैं। पुष्टि के लिए अपना ईमेल देखें।',
+    lbFwdEmail:'क्यू पास दूसरे ईमेल पर भेजें (वैकल्पिक)', lbFwdBtn:'भेजें',
+    fwdSuccess:'✅ भेज दिया! इनबॉक्स देखें', fwdFail:'नहीं भेजा जा सका। फिर कोशिश करें या स्क्रीनशॉट लें।',
+    saveBannerTitle:'📱 पंजीकरण की पुष्टि हो गई! नीचे से QR कोड डाउनलोड करें या स्क्रीनशॉट लें।',
+    saveBannerSub:'कतार पास डाउनलोड करें या इस पेज का स्क्रीनशॉट लें। वितरण काउंटर पर QR कोड या कतार नंबर दिखाएं।',
+    screenshotHint:'💡 स्क्रीनशॉट लें या डाउनलोड करें — QR कोड और कतार नंबर ही वितरण काउंटर पर आपकी पहचान है।',
     faqs:[
       {q:'योग सत्र कब शुरू होगा?',
        a:'मुख्य योग सत्र प्रातः 6:30 बजे शुरू होगा। कृपया जल्दी आएं — स्थान जल्दी भर जाता है और वितरण सत्र शुरू होने से पहले बंद हो जाता है।'},
@@ -1711,7 +1711,7 @@ function chatReply(q) {
 const CONTACT_FAQ = {
   en: {
     registration: [
-      {q:'How do I get my queue number and pass?', a:'Your queue number and QR code appear immediately on screen after registration, and a confirmation email is sent to you with the QR code included. Download your Queue Pass or take a screenshot as a backup.'},
+      {q:'How do I get my queue number and pass?', a:'Your queue number and QR code appear immediately on screen after registration. Download your Queue Pass or take a screenshot — this is essential as no confirmation email will be sent.'},
       {q:'How many participants can I register for?', a:'You can register for up to 5 participants total — yourself plus up to 4 additional participants such as family members or friends.'}
     ],
     collection: [
