@@ -89,8 +89,8 @@
       font-style: italic; line-height: 1.6; text-align: center;
       color: var(--yellow); letter-spacing: .3px;
     }
-    .hero-info-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-    .hero-info-pill {
+    .hero-info-row { display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; }
+    .hero-info-pill { font-size: 11px !important; padding: 4px 8px !important;
       display: flex; align-items: center; gap: 7px;
       background: rgba(255,255,255,0.12); border-radius: 30px;
       padding: 7px 16px; font-size: 12px; font-weight: 600;
@@ -258,10 +258,10 @@
     .code-hint { font-size: 11px; color: var(--muted); text-align: center; margin-top: 6px; }
 
     /* ── HERO DATE BLOCK ────────────────────────────────── */
-    .hero-date-block { margin: 0 auto 18px; text-align: center; }
-    .hero-date-day  { font-size: clamp(13px,3vw,16px); font-weight: 700; text-transform: uppercase;
+    .hero-date-block { margin: 0 auto 8px; text-align: center; }
+    .hero-date-day  { font-size: clamp(8px,2vw,10px); font-weight: 700; text-transform: uppercase;
                       letter-spacing: 3px; opacity: .85; margin-bottom: 2px; }
-    .hero-date-main { font-size: clamp(26px,7vw,48px); font-weight: 800; line-height: 1;
+    .hero-date-main { font-size: clamp(14px,4vw,26px); font-weight: 800; line-height: 1;
                       color: var(--yellow); text-shadow: 0 2px 12px rgba(0,0,0,.35); }
 
 
@@ -1378,6 +1378,18 @@ async function handleSubmit(){
 function showConfirmation(reg){
   document.getElementById('formSection').style.display='none';
   document.getElementById('confirmSection').classList.add('show');
+  // Hide everything except confirm section so QR is immediately visible
+  ['countdownBanner','secDivFaq','secContact','disclaimerSection'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = 'none';
+  });
+  const siteHeader = document.querySelector('header.site-header');
+  const hero = document.querySelector('section.hero');
+  const logoBanner = document.querySelector('div[style*="Pagebanner"]') ||
+    Array.from(document.querySelectorAll('div')).find(d => d.innerHTML.includes('Pagebanner'));
+  if (siteHeader) siteHeader.style.display = 'none';
+  if (hero) hero.style.display = 'none';
+  if (logoBanner) logoBanner.style.display = 'none';
   window.scrollTo({top:0,behavior:'smooth'});
   const t=TX[lang];
   ['confirmTitle','confirmSub','lbQueueNum','lbQueueHint','lbDownload',
