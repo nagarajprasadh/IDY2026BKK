@@ -581,9 +581,10 @@
       </div>
       <div class="form-group">
         <label class="f-label" for="regEmail"><span id="lbEmail">Email Address</span> <span class="req">*</span></label>
-        <input class="f-input" id="regEmail" type="email" autocomplete="email" placeholder="yourname@email.com" inputmode="email" lang="en">
+        <input class="f-input" id="regEmail" type="email" autocomplete="email" placeholder="yourname@email.com" inputmode="email" lang="en" onblur="checkEmailDuplicate(this.value)">
         <div class="f-err" id="errEmail">Please enter a valid email address</div>
         <div id="emailTypoHint" style="display:none;font-size:12px;color:#0072BB;margin-top:4px;cursor:pointer;"></div>
+        <div id="emailDupWarn" style="display:none;margin-top:8px;padding:10px 13px;background:#FFFBEB;border:1.5px solid #F59E0B;border-radius:9px;font-size:13px;color:#92400E;"></div>
       </div>
     </div>
 
@@ -1286,6 +1287,35 @@ function suggestDomain(email){
   });
   return bestDist<=2?best:null; // only suggest if very close
 }
+async function checkEmailDuplicate(email) {
+  const warn = document.getElementById('emailDupWarn');
+  if (!warn) return;
+  warn.style.display = 'none';
+  if (!email || !isEmail(email)) return;
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=checkEmail&token=${encodeURIComponent(PORTAL_TOKEN)}&email=${encodeURIComponent(email)}`);
+    const d = await res.json();
+    if (!d.exists || !d.registrations || !d.registrations.length) return;
+    // Build a human-readable list of existing registrations
+    const lines = d.registrations.map(r => {
+      const names = (r.participantNames||[]).join(', ');
+      return `Queue #${r.queueNumber}: ${names || '(no names on record)'}`;
+    });
+    const TX_warn = (TX[lang]||TX['en']);
+    const heading = lang==='th'
+      ? `⚠️ อีเมลนี้มีการลงทะเบียนอยู่แล้ว ${d.count} รายการ`
+      : `⚠️ This email already has ${d.count} registration${d.count>1?'s':''}:`;
+    const note = lang==='th'
+      ? 'หากคุณกำลังเพิ่มผู้เข้าร่วมใหม่ กรุณาดำเนินการต่อ'
+      : 'If you are registering additional participants, please continue. If this is a mistake, please check your confirmation email.';
+    warn.innerHTML = `<strong>${heading}</strong><br><span style="font-size:12px;">${lines.join('<br>')}</span><br><span style="font-size:11px;opacity:.8;margin-top:4px;display:block;">${note}</span>`;
+    warn.style.display = 'block';
+  } catch(e) {
+    // Silent fail — don't block registration if check fails
+    console.warn('checkEmailDuplicate error:', e);
+  }
+}
+
 function showEmailHint(inputId,hintId){
   const input=document.getElementById(inputId);
   const hint=document.getElementById(hintId);
@@ -1352,6 +1382,17 @@ async function handleSubmit(){
     const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload),signal:controller.signal});
     clearTimeout(timer);
     const result=await resp.json();
+    if(!result.success && result.duplicate) {
+      // Hard block — exact duplicate detected server-side
+      hideOverlay();
+      const dupMsg = lang==='th'
+        ? `การลงทะเบียนนี้มีอยู่แล้ว (คิว #${result.existingQueue}) กรุณาตรวจสอบอีเมลยืนยันของคุณ`
+        : `These participants are already registered (Queue #${result.existingQueue}). Please check your confirmation email.`;
+      showAlert(dupMsg, 'warn');
+      document.getElementById('submitBtn').disabled=false;
+      document.getElementById('submitBtn').textContent=(TX[lang]||TX['en']).submitBtn||'Register';
+      return;
+    }
     if(!result.success) throw new Error(result.error||'Unknown error');
     currentReg={queueNumber:result.queueNumber,registrantName:name,registrantEmail:email,participants:pList,tshirtCounts};
     hideOverlay(); showConfirmation(currentReg);

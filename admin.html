@@ -262,6 +262,52 @@
 
     .refresh-note{font-size:11px;color:var(--muted);margin-top:6px;}
 
+    /* ── BROADCAST TAB ─────────────────────────────────── */
+    .bc-section{background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;}
+    .bc-section h4{font-size:13px;font-weight:800;color:var(--primary-dark);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;display:flex;align-items:center;gap:7px;}
+    .bc-field{margin-bottom:12px;}
+    .bc-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+    .bc-input{width:100%;padding:10px 13px;border:2px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;color:var(--text);transition:border-color .2s;background:#fff;}
+    .bc-input:focus{outline:none;border-color:var(--primary);}
+    .bc-textarea{width:100%;padding:10px 13px;border:2px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;color:var(--text);resize:vertical;min-height:90px;transition:border-color .2s;}
+    .bc-textarea:focus{outline:none;border-color:var(--primary);}
+    .bc-merge-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+    .bc-tag{padding:3px 9px;border:1.5px solid var(--primary);border-radius:6px;font-size:11px;color:var(--primary);font-weight:700;cursor:pointer;background:#fff;transition:all .15s;font-family:monospace;}
+    .bc-tag:hover{background:var(--primary);color:#fff;}
+    .bc-btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+    .bc-btn{padding:9px 18px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s;min-height:38px;}
+    .bc-btn.primary{background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;}
+    .bc-btn.success{background:var(--success);color:#fff;}
+    .bc-btn.danger{background:var(--error);color:#fff;}
+    .bc-btn.ghost{background:#F3F4F6;color:var(--text);border:1px solid var(--border);}
+    .bc-btn.amber{background:#F59E0B;color:#fff;}
+    .bc-btn:disabled{opacity:.5;cursor:not-allowed;}
+    .bc-status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700;}
+    .bc-status-pill.idle{background:#F3F4F6;color:#6B7280;}
+    .bc-status-pill.running{background:#ECFDF5;color:#065F46;}
+    .bc-status-pill.paused{background:#FFFBEB;color:#92400E;}
+    .bc-status-pill.complete{background:#EFF6FF;color:#1E40AF;}
+    .bc-progress-wrap{background:#e2e8f0;border-radius:20px;height:10px;overflow:hidden;margin:10px 0;}
+    .bc-progress-bar{height:100%;background:linear-gradient(90deg,var(--primary),var(--primary-light));border-radius:20px;transition:width .5s ease;}
+    .bc-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0;}
+    .bc-stat{text-align:center;padding:10px 6px;background:#F8FAFC;border-radius:10px;border:1px solid var(--border);}
+    .bc-stat-val{font-size:22px;font-weight:800;color:var(--primary);}
+    .bc-stat-val.green{color:var(--success);}
+    .bc-stat-val.red{color:var(--error);}
+    .bc-stat-val.amber{color:#D97706;}
+    .bc-stat-lbl{font-size:10px;color:var(--muted);margin-top:2px;}
+    .bc-search-row{display:flex;gap:8px;}
+    .bc-search-row .bc-input{flex:1;}
+    .bc-single-result{margin-top:10px;padding:10px 14px;background:#F8FAFC;border-radius:9px;border:1px solid var(--border);font-size:13px;display:none;}
+    .bc-single-result.show{display:block;}
+    .bc-alert{padding:10px 14px;border-radius:9px;font-size:13px;margin-top:10px;display:none;}
+    .bc-alert.show{display:block;}
+    .bc-alert.ok{background:var(--success-bg);color:#065F46;}
+    .bc-alert.err{background:var(--error-bg);color:#991B1B;}
+    .bc-failed-list{margin-top:10px;max-height:150px;overflow-y:auto;font-size:12px;}
+    .bc-failed-item{padding:4px 0;border-bottom:1px solid #f1f5f9;color:var(--muted);}
+    @media(max-width:520px){.bc-stats-row{grid-template-columns:1fr 1fr;}}
+
     /* ── RESPONSIVE ────────────────────────────────────── */
     @media(max-width:760px){
       .dist-layout{grid-template-columns:1fr;}
@@ -321,6 +367,7 @@
     <button class="nav-tab"        onclick="switchTab('distribution')"  id="tab-distribution">📦 Distribution</button>
     <button class="nav-tab"        onclick="switchTab('registrations')" id="tab-registrations">📋 Registrations</button>
     <button class="nav-tab"        onclick="switchTab('dedupe')"         id="tab-dedupe">🔄 Dedupe</button>
+    <button class="nav-tab"        onclick="switchTab('broadcast')"      id="tab-broadcast">📢 Broadcast</button>
   </nav>
 
   <div class="tab-content">
@@ -490,6 +537,104 @@
         <div id="resendFailedAlert" style="margin-top:10px;"></div>
       </div>
     </div>
+
+    <!-- BROADCAST ─────────────────────────────────────────────────────── -->
+    <div class="tab-pane" id="pane-broadcast">
+
+      <!-- Template Designer -->
+      <div class="bc-section">
+        <h4>✍️ Email Template</h4>
+        <div class="bc-field">
+          <label>Subject Line</label>
+          <input class="bc-input" id="bcSubject" type="text" placeholder="e.g. IDY 2026 — See you on 21 June! 🧘" />
+        </div>
+        <div class="bc-field">
+          <label>English Body</label>
+          <div class="bc-merge-tags">
+            <span style="font-size:11px;color:var(--muted);padding-top:3px;">Insert:</span>
+            <button class="bc-tag" onclick="bcInsert('bcBodyEN','{{name}}')">{{name}}</button>
+            <button class="bc-tag" onclick="bcInsert('bcBodyEN','{{queueNumber}}')">{{queueNumber}}</button>
+            <button class="bc-tag" onclick="bcInsert('bcBodyEN','{{participants}}')">{{participants}}</button>
+          </div>
+          <textarea class="bc-textarea" id="bcBodyEN" placeholder="Dear {{name}}, this is a reminder for the 12th International Day of Yoga 2026. Your queue number is #{{queueNumber}}. We look forward to seeing you!"></textarea>
+        </div>
+        <div class="bc-field">
+          <label>Thai Body (ภาษาไทย)</label>
+          <div class="bc-merge-tags">
+            <span style="font-size:11px;color:var(--muted);padding-top:3px;">Insert:</span>
+            <button class="bc-tag" onclick="bcInsert('bcBodyTH','{{name}}')">{{name}}</button>
+            <button class="bc-tag" onclick="bcInsert('bcBodyTH','{{queueNumber}}')">{{queueNumber}}</button>
+            <button class="bc-tag" onclick="bcInsert('bcBodyTH','{{participants}}')">{{participants}}</button>
+          </div>
+          <textarea class="bc-textarea" id="bcBodyTH" placeholder="เรียน {{name}} นี่คือการแจ้งเตือนสำหรับวันโยคะสากลครั้งที่ 12 ประจำปี 2569 หมายเลขคิวของคุณคือ #{{queueNumber}} เราหวังจะพบคุณในงาน!"></textarea>
+        </div>
+        <div class="bc-field">
+          <label>Logo URL <span style="font-weight:400;color:var(--muted);">(optional — paste a direct image link)</span></label>
+          <input class="bc-input" id="bcLogoUrl" type="url" placeholder="https://…/logo.png" />
+        </div>
+        <div class="bc-btn-row">
+          <button class="bc-btn primary" onclick="bcSaveTemplate()">💾 Save Template</button>
+          <button class="bc-btn ghost"   onclick="bcLoadTemplate()">↩ Load Saved</button>
+        </div>
+        <div class="bc-alert" id="bcTemplateAlert"></div>
+      </div>
+
+      <!-- Test Send -->
+      <div class="bc-section">
+        <h4>🧪 Test Send</h4>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Send yourself a preview with real merge data before launching the blast.</p>
+        <div class="bc-search-row">
+          <input class="bc-input" id="bcTestEmail" type="email" placeholder="your@email.com" />
+          <button class="bc-btn primary" onclick="bcSendTest()">Send test</button>
+        </div>
+        <div class="bc-alert" id="bcTestAlert"></div>
+      </div>
+
+      <!-- Single Send -->
+      <div class="bc-section">
+        <h4>👤 Single Send</h4>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Send reminder to one registrant by queue number or email.</p>
+        <div class="bc-search-row">
+          <input class="bc-input" id="bcSingleSearch" type="text" placeholder="Queue # or email address" oninput="bcSingleLookup()" />
+          <button class="bc-btn primary" id="bcSingleSendBtn" onclick="bcSendSingle()" disabled>Send</button>
+        </div>
+        <div class="bc-single-result" id="bcSingleResult"></div>
+        <div class="bc-alert" id="bcSingleAlert"></div>
+      </div>
+
+      <!-- Bulk Blast -->
+      <div class="bc-section">
+        <h4>🚀 Bulk Blast</h4>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-weight:600;">Status:</span>
+          <span class="bc-status-pill idle" id="bcStatusPill">● Idle</span>
+          <span style="font-size:12px;color:var(--muted);" id="bcStartedAt"></span>
+        </div>
+        <div class="bc-stats-row">
+          <div class="bc-stat"><div class="bc-stat-val" id="bcTotal">—</div><div class="bc-stat-lbl">Total</div></div>
+          <div class="bc-stat"><div class="bc-stat-val green" id="bcSent">—</div><div class="bc-stat-lbl">Sent</div></div>
+          <div class="bc-stat"><div class="bc-stat-val amber" id="bcRemaining">—</div><div class="bc-stat-lbl">Remaining</div></div>
+          <div class="bc-stat"><div class="bc-stat-val red" id="bcFailed">—</div><div class="bc-stat-lbl">Failed</div></div>
+        </div>
+        <div class="bc-progress-wrap"><div class="bc-progress-bar" id="bcProgressBar" style="width:0%"></div></div>
+        <p style="font-size:12px;color:var(--muted);margin-bottom:14px;" id="bcEta"></p>
+        <div class="bc-field" style="max-width:200px;">
+          <label>Batch size / hour</label>
+          <input class="bc-input" id="bcBatchSize" type="number" value="120" min="10" max="500" />
+        </div>
+        <div class="bc-btn-row">
+          <button class="bc-btn success" id="bcStartBtn"  onclick="bcStart()">▶ Start Blast</button>
+          <button class="bc-btn amber"   id="bcPauseBtn"  onclick="bcPause()" style="display:none;">⏸ Pause</button>
+          <button class="bc-btn primary" id="bcRunNowBtn" onclick="bcRunNow()" style="display:none;" title="Send one batch right now without waiting for the hourly trigger">⚡ Run Batch Now</button>
+          <button class="bc-btn ghost"   id="bcRetryBtn"  onclick="bcRetry()" style="display:none;">↩ Retry Failed</button>
+          <button class="bc-btn danger"  id="bcResetBtn"  onclick="bcReset()">🗑 Reset</button>
+        </div>
+        <div class="bc-alert" id="bcBlastAlert"></div>
+        <div class="bc-failed-list" id="bcFailedList"></div>
+      </div>
+
+    </div><!-- /pane-broadcast -->
+
   </div>
 </div>
 
@@ -588,6 +733,7 @@ function switchTab(name) {
   document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
   document.getElementById('pane-'+name).classList.add('active');
   document.getElementById('tab-'+name).classList.add('active');
+  if (name === 'broadcast') { bcRefreshStatus(); bcLoadTemplate(); }
 }
 
 /* ── DASHBOARD ─────────────────────────────────────── */
@@ -1168,6 +1314,225 @@ async function maConfirmArchive() {
     btn.disabled = false; btn.textContent = '🗄️ Archive Selected';
   }
 }
+
+/* ── BROADCAST ──────────────────────────────────────── */
+let bcSingleDocId = null;
+let bcStatusTimer  = null;
+
+// Insert merge tag into a textarea at cursor position
+function bcInsert(fieldId, tag) {
+  const el = document.getElementById(fieldId);
+  const start = el.selectionStart, end = el.selectionEnd;
+  el.value = el.value.slice(0, start) + tag + el.value.slice(end);
+  el.selectionStart = el.selectionEnd = start + tag.length;
+  el.focus();
+}
+
+function bcShowAlert(id, msg, type) {
+  const el = document.getElementById(id);
+  el.className = 'bc-alert show ' + (type || 'ok');
+  el.textContent = msg;
+  setTimeout(() => { el.classList.remove('show'); }, 6000);
+}
+
+// Save template to GAS
+async function bcSaveTemplate() {
+  const tmpl = {
+    subject: document.getElementById('bcSubject').value.trim(),
+    bodyEN:  document.getElementById('bcBodyEN').value.trim(),
+    bodyTH:  document.getElementById('bcBodyTH').value.trim(),
+    logoUrl: document.getElementById('bcLogoUrl').value.trim()
+  };
+  if (!tmpl.subject) { bcShowAlert('bcTemplateAlert', 'Subject is required.', 'err'); return; }
+  if (!tmpl.bodyEN && !tmpl.bodyTH) { bcShowAlert('bcTemplateAlert', 'Add at least one body (EN or TH).', 'err'); return; }
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'saveTemplate', password:ADMIN_PASSWORD, ...tmpl }) });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error);
+    bcShowAlert('bcTemplateAlert', '✅ Template saved successfully.', 'ok');
+  } catch(e) { bcShowAlert('bcTemplateAlert', 'Error: ' + e.message, 'err'); }
+}
+
+// Load saved template from GAS into the fields
+async function bcLoadTemplate() {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=broadcastTemplate&pass=${encodeURIComponent(ADMIN_PASSWORD)}`);
+    const d = await res.json();
+    document.getElementById('bcSubject').value = d.subject || '';
+    document.getElementById('bcBodyEN').value  = d.bodyEN  || '';
+    document.getElementById('bcBodyTH').value  = d.bodyTH  || '';
+    document.getElementById('bcLogoUrl').value = d.logoUrl || '';
+    bcShowAlert('bcTemplateAlert', '✅ Template loaded.', 'ok');
+  } catch(e) { bcShowAlert('bcTemplateAlert', 'Failed to load: ' + e.message, 'err'); }
+}
+
+// Send a test email to self
+async function bcSendTest() {
+  const email = document.getElementById('bcTestEmail').value.trim();
+  if (!email) { bcShowAlert('bcTestAlert', 'Enter an email address.', 'err'); return; }
+  // Pass the current (possibly unsaved) template inline so admin can preview before saving
+  const tmpl = {
+    subject: document.getElementById('bcSubject').value.trim() || null,
+    bodyEN:  document.getElementById('bcBodyEN').value.trim(),
+    bodyTH:  document.getElementById('bcBodyTH').value.trim(),
+    logoUrl: document.getElementById('bcLogoUrl').value.trim()
+  };
+  if (!tmpl.subject) { bcShowAlert('bcTestAlert', 'Save a template (or fill subject) before testing.', 'err'); return; }
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'sendTestBroadcast', password:ADMIN_PASSWORD, email, template:tmpl }) });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error);
+    bcShowAlert('bcTestAlert', `✅ Test email sent to ${d.sentTo} — check your inbox.`, 'ok');
+  } catch(e) { bcShowAlert('bcTestAlert', 'Failed: ' + e.message, 'err'); }
+}
+
+// Look up a registrant for single send
+let bcSingleTimer = null;
+function bcSingleLookup() {
+  clearTimeout(bcSingleTimer);
+  bcSingleTimer = setTimeout(() => {
+    const q = document.getElementById('bcSingleSearch').value.trim().toLowerCase();
+    const res = document.getElementById('bcSingleResult');
+    const btn = document.getElementById('bcSingleSendBtn');
+    bcSingleDocId = null; btn.disabled = true; res.classList.remove('show');
+    if (!q) return;
+    // Search live in already-loaded allRegs
+    const match = allRegs.find(r =>
+      String(r.queueNumber) === q ||
+      (r.registrantEmail||'').toLowerCase() === q
+    );
+    if (!match) {
+      res.innerHTML = '<span style="color:var(--error);">No registration found for that queue # or email.</span>';
+      res.classList.add('show'); return;
+    }
+    const names = (match.participants||[]).map(p=>esc(p.name)).join(', ');
+    res.innerHTML = `<strong>#${match.queueNumber}</strong> — ${esc(match.registrantEmail)}<br>
+      <span style="color:var(--muted);font-size:12px;">${names}</span>`;
+    res.classList.add('show');
+    bcSingleDocId = match.docId;
+    btn.disabled = false;
+  }, 350);
+}
+
+async function bcSendSingle() {
+  if (!bcSingleDocId) return;
+  const btn = document.getElementById('bcSingleSendBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'sendSingleBroadcast', password:ADMIN_PASSWORD, docId:bcSingleDocId }) });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error);
+    bcShowAlert('bcSingleAlert', `✅ Sent to ${d.email} (Queue #${d.queueNumber}).`, 'ok');
+    document.getElementById('bcSingleSearch').value = '';
+    document.getElementById('bcSingleResult').classList.remove('show');
+    bcSingleDocId = null;
+  } catch(e) { bcShowAlert('bcSingleAlert', 'Failed: ' + e.message, 'err'); }
+  finally { btn.disabled = false; btn.textContent = 'Send'; }
+}
+
+// Bulk blast controls
+async function bcStart() {
+  if (!confirm('Start the broadcast blast?\n\nMake sure you have saved your template and sent a test email first.')) return;
+  const batchSize = parseInt(document.getElementById('bcBatchSize').value) || 120;
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'startBroadcast', password:ADMIN_PASSWORD, batchSize }) });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error);
+    bcShowAlert('bcBlastAlert', d.msg, 'ok');
+    bcRefreshStatus();
+    bcStatusTimer = setInterval(bcRefreshStatus, 15000);
+  } catch(e) { bcShowAlert('bcBlastAlert', 'Error: ' + e.message, 'err'); }
+}
+
+async function bcPause() {
+  if (!confirm('Pause the broadcast? You can resume anytime — already-sent registrants will not be re-sent.')) return;
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'pauseBroadcast', password:ADMIN_PASSWORD }) });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error);
+    bcShowAlert('bcBlastAlert', d.msg, 'ok');
+    clearInterval(bcStatusTimer);
+    bcRefreshStatus();
+  } catch(e) { bcShowAlert('bcBlastAlert', 'Error: ' + e.message, 'err'); }
+}
+
+async function bcRunNow() {
+  if (!confirm('Run one batch right now (up to the configured batch size)? This is immediate.')) return;
+  const btn = document.getElementById('bcRunNowBtn');
+  btn.disabled = true; btn.textContent = '⏳ Running…';
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'runBatchNow', password:ADMIN_PASSWORD }) });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error || d.msg);
+    bcShowAlert('bcBlastAlert', `✅ Batch done — sent: ${d.batchSent}, failed: ${d.batchFailed}, remaining: ${d.remaining}`, 'ok');
+    bcRefreshStatus();
+  } catch(e) { bcShowAlert('bcBlastAlert', 'Error: ' + e.message, 'err'); }
+  finally { btn.disabled = false; btn.textContent = '⚡ Run Batch Now'; }
+}
+
+async function bcRetry() {
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'retryFailedBroadcast', password:ADMIN_PASSWORD }) });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error);
+    bcShowAlert('bcBlastAlert', `✅ Retried — sent: ${d.retried}, still failed: ${d.stillFailed}`, 'ok');
+    bcRefreshStatus();
+  } catch(e) { bcShowAlert('bcBlastAlert', 'Retry error: ' + e.message, 'err'); }
+}
+
+async function bcReset() {
+  if (!confirm('Reset broadcast state?\n\nThis clears all sent/failed history so you can run a fresh blast. Your template will be preserved.')) return;
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({ action:'resetBroadcast', password:ADMIN_PASSWORD }) });
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error);
+    bcShowAlert('bcBlastAlert', '✅ Broadcast state reset.', 'ok');
+    clearInterval(bcStatusTimer);
+    bcRefreshStatus();
+  } catch(e) { bcShowAlert('bcBlastAlert', 'Error: ' + e.message, 'err'); }
+}
+
+async function bcRefreshStatus() {
+  try {
+    const res = await fetch(`${SCRIPT_URL}?action=broadcastStatus&pass=${encodeURIComponent(ADMIN_PASSWORD)}`);
+    const d = await res.json();
+    // Stats
+    document.getElementById('bcTotal').textContent     = d.total     ?? '—';
+    document.getElementById('bcSent').textContent      = d.sent      ?? '—';
+    document.getElementById('bcRemaining').textContent = d.remaining ?? '—';
+    document.getElementById('bcFailed').textContent    = d.failed    ?? '—';
+    document.getElementById('bcProgressBar').style.width = (d.pct || 0) + '%';
+    // ETA
+    const eta = d.remaining > 0
+      ? `${d.remaining} remaining · ~${d.hoursLeft} hour${d.hoursLeft===1?'':'s'} at ${d.batchSize}/hr`
+      : (d.status === 'complete' ? 'All sent ✓' : '');
+    document.getElementById('bcEta').textContent = eta;
+    // Started at
+    document.getElementById('bcStartedAt').textContent = d.startedAt ? 'Started: ' + new Date(d.startedAt).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    // Status pill
+    const pill = document.getElementById('bcStatusPill');
+    const pillMap = { idle:'● Idle', running:'● Running', paused:'⏸ Paused', complete:'✓ Complete' };
+    pill.textContent = pillMap[d.status] || d.status;
+    pill.className   = 'bc-status-pill ' + (d.status || 'idle');
+    // Button visibility
+    const isRunning = d.status === 'running';
+    const isPaused  = d.status === 'paused';
+    const isIdle    = d.status === 'idle' || d.status === 'complete';
+    document.getElementById('bcStartBtn').style.display  = (isIdle || isPaused) ? '' : 'none';
+    document.getElementById('bcPauseBtn').style.display  = isRunning ? '' : 'none';
+    document.getElementById('bcRunNowBtn').style.display = isRunning ? '' : 'none';
+    document.getElementById('bcRetryBtn').style.display  = d.failed > 0 ? '' : 'none';
+    // Failed list
+    const failList = document.getElementById('bcFailedList');
+    if (d.failed > 0 && d.failedDocIds && d.failedDocIds.length) {
+      const failRegs = d.failedDocIds.map(id => allRegs.find(r => r.docId === id)).filter(Boolean);
+      failList.innerHTML = '<p style="font-size:11px;color:var(--error);font-weight:700;margin-bottom:4px;">Failed sends:</p>' +
+        failRegs.map(r => `<div class="bc-failed-item">#${r.queueNumber} — ${esc(r.registrantEmail)}</div>`).join('');
+    } else { failList.innerHTML = ''; }
+  } catch(e) { console.warn('bcRefreshStatus error:', e); }
+}
+
+
 </script>
 </body>
 </html>
