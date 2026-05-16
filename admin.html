@@ -215,6 +215,34 @@
     .empty-list{text-align:center;padding:40px 20px;color:var(--muted);font-size:14px;}
     .empty-list .emoji{font-size:36px;display:block;margin-bottom:10px;}
 
+    /* ── REGISTRATION ACTION BUTTONS ──────────────────── */
+    .reg-actions{display:flex;flex-direction:column;gap:5px;margin-top:6px;}
+    .ra-btn{padding:5px 10px;font-size:11px;font-weight:700;border-radius:8px;cursor:pointer;font-family:inherit;white-space:nowrap;touch-action:manipulation;min-height:30px;border:1px solid;transition:all .2s;}
+    .ra-btn.resend{background:#EBF5FB;color:var(--primary);border-color:var(--primary);}
+    .ra-btn.resend:hover{background:var(--primary);color:#fff;}
+    .ra-btn.edit{background:#FFF3E0;color:#E65100;border-color:#E65100;}
+    .ra-btn.edit:hover{background:#E65100;color:#fff;}
+
+    /* ── EDIT MODAL ────────────────────────────────────── */
+    .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:2000;align-items:center;justify-content:center;padding:16px;}
+    .modal-overlay.open{display:flex;}
+    .modal-card{background:#fff;border-radius:16px;padding:24px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.3);}
+    .modal-card h3{font-size:16px;font-weight:800;color:var(--primary-dark);margin-bottom:4px;}
+    .modal-sub{font-size:12px;color:var(--muted);margin-bottom:18px;}
+    .modal-field{margin-bottom:14px;}
+    .modal-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
+    .modal-field input{width:100%;padding:10px 13px;border:2px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;color:var(--text);transition:border-color .2s;}
+    .modal-field input:focus{outline:none;border-color:var(--primary);}
+    .modal-prow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+    .modal-prow:last-child{border-bottom:none;}
+    .modal-pname{font-weight:600;flex:1;}
+    .modal-psize{padding:6px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;font-weight:700;color:var(--primary);background:#fff;cursor:pointer;}
+    .modal-psize:focus{outline:none;border-color:var(--primary);}
+    .modal-actions{display:flex;gap:10px;margin-top:20px;}
+    .modal-btn-cancel{flex:1;padding:12px;background:#F3F4F6;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
+    .modal-btn-save{flex:2;padding:12px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+    .modal-alert{margin-top:12px;}
+
     /* ── SPINNER / OVERLAY ─────────────────────────────── */
     .spin-sm{width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;vertical-align:middle;}
     @keyframes spin{to{transform:rotate(360deg);}}
@@ -414,6 +442,27 @@
         <button class="lookup-btn" id="resendFailedBtn" onclick="resendFailed()" style="width:100%;justify-content:center;padding:13px;">📧 Resend All Failed Emails</button>
         <div id="resendFailedAlert" style="margin-top:10px;"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── EDIT REGISTRATION MODAL ───────────────────────────────────── -->
+<div class="modal-overlay" id="editModal" onclick="if(event.target===this)closeEditModal()">
+  <div class="modal-card">
+    <h3 id="modalTitle">✏️ Edit Registration</h3>
+    <p class="modal-sub" id="modalSub"></p>
+    <div class="modal-field">
+      <label>Email Address</label>
+      <input type="email" id="modalEmail" placeholder="Enter corrected email" />
+    </div>
+    <div class="modal-field">
+      <label>Participant Sizes</label>
+      <div id="modalParticipants"></div>
+    </div>
+    <div class="modal-alert"><div id="modalAlert"></div></div>
+    <div class="modal-actions">
+      <button class="modal-btn-cancel" onclick="closeEditModal()">Cancel</button>
+      <button class="modal-btn-save" id="modalSaveBtn" onclick="saveEdit()">💾 Save Changes</button>
     </div>
   </div>
 </div>
@@ -678,9 +727,89 @@ function renderRegList() {
       <div class="reg-meta">
         <span class="led-wrap ${r.collected?'green':'red'}"><span class="led-dot ${r.collected?'green':'red'}"></span>${r.collected?'Collected':'Pending'}</span>
         ${qa}
+        <div class="reg-actions">
+          <button class="ra-btn resend" onclick="resendQR('${r.docId}',${r.queueNumber})">📧 Resend</button>
+          <button class="ra-btn edit"   onclick="editReg('${r.docId}')">✏️ Edit</button>
+        </div>
       </div>
     </div>`;
   }).join('');
+}
+
+/* ── RESEND QR ─────────────────────────────────────── */
+async function resendQR(docId, queueNum) {
+  const r = allRegs.find(x => x.docId === docId);
+  if (!r) { alert('Registration not found — please refresh and try again.'); return; }
+  if (!confirm(`Resend QR confirmation email to:\n${r.registrantEmail}\n(Queue #${r.queueNumber})?`)) return;
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
+      action:'resend', toEmail: r.registrantEmail, queueNumber: r.queueNumber,
+      lang: r.lang||'en', registrantName: r.registrantName,
+      isRegistrantParticipant: r.isParticipant,
+      participants: r.participants, tshirtCounts: r.tshirtCounts,
+      totalParticipants: r.totalParticipants
+    })});
+    const d = await res.json();
+    if (d.success) alert(`✅ Email resent to ${r.registrantEmail}`);
+    else alert('❌ Resend failed: ' + (d.error||'Unknown error'));
+  } catch(e) { alert('❌ Connection error: ' + e.message); }
+}
+
+/* ── EDIT REGISTRATION ─────────────────────────────── */
+let editingDocId = null;
+
+function editReg(docId) {
+  const r = allRegs.find(x => x.docId === docId);
+  if (!r) { alert('Registration not found — please refresh.'); return; }
+  editingDocId = docId;
+  document.getElementById('modalTitle').textContent = `✏️ Edit — Queue #${r.queueNumber}`;
+  document.getElementById('modalSub').textContent   = r.registrantName;
+  document.getElementById('modalEmail').value       = r.registrantEmail || '';
+  document.getElementById('modalAlert').innerHTML   = '';
+  const pp = document.getElementById('modalParticipants');
+  pp.innerHTML = (r.participants||[]).map((p,i) => `
+    <div class="modal-prow">
+      <span class="modal-pname">${esc(p.name)}${p.isRegistrant?' ⭐':''}</span>
+      <select class="modal-psize" id="psize_${i}">
+        ${['S','M','L','XL','XXL'].map(s=>`<option value="${s}"${p.size===s?' selected':''}>${s}</option>`).join('')}
+      </select>
+    </div>`).join('');
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeEditModal() {
+  document.getElementById('editModal').classList.remove('open');
+  editingDocId = null;
+}
+
+async function saveEdit() {
+  if (!editingDocId) return;
+  const r = allRegs.find(x => x.docId === editingDocId);
+  if (!r) { closeEditModal(); return; }
+  const newEmail = document.getElementById('modalEmail').value.trim();
+  const updatedParticipants = (r.participants||[]).map((p,i) => ({
+    ...p, size: document.getElementById('psize_'+i)?.value || p.size
+  }));
+  const btn = document.getElementById('modalSaveBtn');
+  btn.disabled = true; btn.textContent = 'Saving…';
+  document.getElementById('modalAlert').innerHTML = '';
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
+      action:'updateRegistration', password: ADMIN_PASSWORD,
+      docId: editingDocId,
+      email: newEmail,
+      participants: updatedParticipants
+    })});
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error||'Unknown error');
+    closeEditModal();
+    await loadData();
+    alert('✅ Registration updated successfully.');
+  } catch(e) {
+    document.getElementById('modalAlert').innerHTML =
+      `<div class="al al-err">❌ ${esc(e.message)}</div>`;
+    btn.disabled = false; btn.textContent = '💾 Save Changes';
+  }
 }
 
 async function quickCollect(docId, queueNum) {
