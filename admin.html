@@ -906,18 +906,33 @@ async function scanDupes() {
 function renderDupeGroups(groups) {
   const el = document.getElementById('dupeGroupList');
   if (!groups.length) { el.innerHTML = '<p style="padding:16px;color:var(--muted);font-size:13px;">No exact duplicates found.</p>'; return; }
-  el.innerHTML = groups.map((g,i) => `
-    <div style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-        <strong style="font-size:13px;">#${g.keepQueue} — ${esc(g.keepName)}</strong>
+  el.innerHTML = groups.map((g,i) => {
+    // Flag as double-submit if ALL dup queue numbers are within 10 of the keep
+    const maxGap   = Math.max(...g.dups.map(d => Math.abs(d.queue - g.keepQueue)));
+    const isDouble = maxGap <= 10;
+    const flagBadge = isDouble
+      ? `<span style="background:#FFF3E0;color:#E65100;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-left:6px;">⚡ Double-submit</span>`
+      : `<span style="background:#E3F2FD;color:#1565C0;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;margin-left:6px;">♻️ Re-registration</span>`;
+    return `
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;${isDouble?'background:#FFFDE7;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;flex-wrap:wrap;gap:4px;">
+        <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">
+          <strong style="font-size:13px;">#${g.keepQueue} — ${esc(g.keepName)}</strong>
+          ${flagBadge}
+        </div>
         <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">KEEP</span>
       </div>
       <div style="color:var(--muted);margin-bottom:4px;">${esc(g.email)}</div>
       <div style="color:#555;margin-bottom:6px;">Participants: ${g.keepParticipantNames.map(n=>esc(n)).join(', ')}</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        ${g.dups.map(d=>`<span style="background:#FFEBEE;color:#C62828;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;">Archive #${d.queue}</span>`).join('')}
+        ${g.dups.map(d=>{
+          const gap = d.queue - g.keepQueue;
+          const gapLabel = gap === 1 ? '(next queue)' : gap <= 10 ? `(+${gap} queues)` : '';
+          return `<span style="background:#FFEBEE;color:#C62828;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;">Archive #${d.queue} ${gapLabel}</span>`;
+        }).join('')}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 async function confirmArchive() {
