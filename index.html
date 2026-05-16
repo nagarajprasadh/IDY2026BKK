@@ -1330,8 +1330,15 @@ function validate(){
 
 async function handleSubmit(){
   if(!validate()) return;
-  document.getElementById('submitBtn').disabled=true;
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;
   showOverlay(TX[lang].overlayMsg);
+
+  // 25-second abort — if GAS doesn't respond in time, assume registration
+  // was written to the sheet and do NOT re-enable the button
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),25000);
+
   try{
     const name=document.getElementById('regName').value.trim();
     const email=document.getElementById('regEmail').value.trim();
@@ -1342,15 +1349,32 @@ async function handleSubmit(){
     const tshirtCounts={};
     pList.forEach(p=>{tshirtCounts[p.size]=(tshirtCounts[p.size]||0)+1;});
     const payload={token:PORTAL_TOKEN,registrantName:name,registrantEmail:email,isRegistrantParticipant:self,participants:pList,tshirtCounts,totalParticipants:pList.length,lang};
-    const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload)});
+    const resp=await fetch(SCRIPT_URL,{method:'POST',body:JSON.stringify(payload),signal:controller.signal});
+    clearTimeout(timer);
     const result=await resp.json();
     if(!result.success) throw new Error(result.error||'Unknown error');
     currentReg={queueNumber:result.queueNumber,registrantName:name,registrantEmail:email,participants:pList,tshirtCounts};
     hideOverlay(); showConfirmation(currentReg);
   }catch(err){
-    console.error(err); hideOverlay();
-    showAlert(TX[lang].regError,'error');
-    document.getElementById('submitBtn').disabled=false;
+    clearTimeout(timer);
+    hideOverlay();
+    if(err.name==='AbortError'){
+      // Server took too long — registration likely went through, do NOT re-enable
+      showAlert(
+        lang==='th'
+          ? 'การลงทะเบียนของคุณอาจสำเร็จแล้ว กรุณาตรวจสอบอีเมลก่อนลงทะเบียนอีกครั้ง'
+          : lang==='hi'
+          ? 'आपका पंजीकरण शायद सफल हो गया है। दोबारा सबमिट करने से पहले अपना ईमेल जांचें।'
+          : 'Your registration may have gone through. Please check your email before trying again.',
+        'warning'
+      );
+      // Button stays disabled to prevent double submission
+    } else {
+      // Genuine server error — safe to retry
+      console.error(err);
+      showAlert(TX[lang].regError,'error');
+      btn.disabled=false;
+    }
   }
 }
 
