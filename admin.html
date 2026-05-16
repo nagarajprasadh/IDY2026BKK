@@ -451,6 +451,32 @@
       </div>
 
       <div class="section-card">
+        <h3>🗂️ Manual Archive</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Search by name, email, or queue number. Select the rows to archive, then confirm.</p>
+        <div style="display:flex;gap:8px;margin-bottom:10px;">
+          <input type="text" id="maSearchInput" placeholder="e.g. benjaporn or 1463 or gmail.com"
+            style="flex:1;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;color:var(--text);"
+            oninput="maSearch()" onkeydown="if(event.key==='Enter')maSearch()">
+          <button class="lookup-btn" onclick="maSearch()" style="padding:11px 18px;">🔍</button>
+        </div>
+        <div id="maResults" style="max-height:360px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;display:none;"></div>
+        <div id="maActions" style="margin-top:12px;display:none;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+            <span id="maSelCount" style="font-size:13px;color:var(--muted);"></span>
+            <div style="display:flex;gap:8px;">
+              <button onclick="maSelectAll()" style="padding:7px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:12px;cursor:pointer;">Select All</button>
+              <button onclick="maClearAll()" style="padding:7px 14px;border:1px solid var(--border);border-radius:8px;background:#fff;font-size:12px;cursor:pointer;">Clear</button>
+              <button id="maArchiveBtn" onclick="maConfirmArchive()"
+                style="padding:7px 16px;background:#C0392B;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
+                🗄️ Archive Selected
+              </button>
+            </div>
+          </div>
+        </div>
+        <div id="maAlert" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="section-card">
         <h3>📧 Failed Sends — Retry</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Retries all QR emails that previously failed due to quota limits. Run this the next morning when the quota has reset.</p>
         <button class="lookup-btn" id="resendFailedBtn" onclick="resendFailed()" style="width:100%;justify-content:center;padding:13px;">📧 Resend All Failed Emails</button>
@@ -1031,6 +1057,95 @@ async function resendFailed() {
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function setAl(id,msg,t){const e=document.getElementById(id);if(e)e.innerHTML=`<div class="al al-${t}">${esc(msg)}</div>`;}
 function clearAl(id){const e=document.getElementById(id);if(e)e.innerHTML='';}
+
+/* ── MANUAL ARCHIVE ────────────────────────────────── */
+let maMatches = [];
+
+function maSearch() {
+  const q = (document.getElementById('maSearchInput').value || '').trim().toLowerCase();
+  const res = document.getElementById('maResults');
+  const act = document.getElementById('maActions');
+  setAl('maAlert','','info');
+  if (!q) { res.style.display='none'; act.style.display='none'; return; }
+
+  maMatches = allRegs.filter(r => {
+    const qNum = String(r.queueNumber || '');
+    const email = (r.registrantEmail || '').toLowerCase();
+    const name  = (r.registrantName  || '').toLowerCase();
+    const pnames = (r.participants || []).map(p=>(p.name||'').toLowerCase()).join(' ');
+    return qNum === q || email.includes(q) || name.includes(q) || pnames.includes(q);
+  }).sort((a,b) => a.queueNumber - b.queueNumber);
+
+  if (!maMatches.length) {
+    res.innerHTML = '<p style="padding:14px;color:var(--muted);font-size:13px;">No results found.</p>';
+    res.style.display = 'block'; act.style.display = 'none'; return;
+  }
+
+  res.innerHTML = maMatches.map((r,i) => {
+    const names = (r.participants||[]).map(p=>esc(p.name)).join(', ');
+    const sc = Object.entries(r.tshirtCounts||{}).map(([k,v])=>`${k}×${v}`).join(' ');
+    return `<label style="display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;font-size:12px;" id="ma-row-${i}">
+      <input type="checkbox" data-idx="${i}" onchange="maUpdateCount()" style="margin-top:3px;flex-shrink:0;">
+      <div>
+        <strong style="font-size:13px;">#${r.queueNumber}</strong>
+        <span style="margin-left:8px;color:var(--muted);">${esc(r.registrantEmail)}</span><br>
+        <span style="color:#555;">${names}</span>
+        <span style="margin-left:8px;color:var(--muted);">${sc}</span><br>
+        <span style="font-size:11px;color:var(--muted);">${r.createdAt ? new Date(r.createdAt).toLocaleString() : ''}</span>
+      </div>
+    </label>`;
+  }).join('');
+
+  res.style.display = 'block';
+  act.style.display = 'block';
+  maUpdateCount();
+}
+
+function maUpdateCount() {
+  const checked = document.querySelectorAll('#maResults input[type=checkbox]:checked');
+  document.getElementById('maSelCount').textContent = `${checked.length} of ${maMatches.length} selected`;
+}
+
+function maSelectAll() {
+  document.querySelectorAll('#maResults input[type=checkbox]').forEach(cb => cb.checked = true);
+  maUpdateCount();
+}
+
+function maClearAll() {
+  document.querySelectorAll('#maResults input[type=checkbox]').forEach(cb => cb.checked = false);
+  maUpdateCount();
+}
+
+async function maConfirmArchive() {
+  const checked = [...document.querySelectorAll('#maResults input[type=checkbox]:checked')];
+  if (!checked.length) { setAl('maAlert','Select at least one row to archive.','err'); return; }
+
+  const selected = checked.map(cb => maMatches[parseInt(cb.dataset.idx)]);
+  const qNums    = selected.map(r => '#' + r.queueNumber).join(', ');
+
+  if (!confirm(`Archive ${selected.length} registration(s)?\n\n${qNums}\n\nNo emails will be sent. This cannot be undone.`)) return;
+
+  const btn = document.getElementById('maArchiveBtn');
+  btn.disabled = true; btn.textContent = 'Archiving…';
+
+  try {
+    const docIds = selected.map(r => r.docId);
+    const res = await fetch(SCRIPT_URL, { method: 'POST', body: JSON.stringify({
+      action: 'manualArchive', password: ADMIN_PASSWORD, docIds
+    })});
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error || 'Unknown error');
+    setAl('maAlert', `✅ Archived ${d.archived} row(s): ${(d.queues||[]).map(q=>'#'+q).join(', ')}`, 'ok');
+    document.getElementById('maResults').style.display = 'none';
+    document.getElementById('maActions').style.display = 'none';
+    document.getElementById('maSearchInput').value = '';
+    await loadData();
+  } catch(e) {
+    setAl('maAlert', 'Archive failed: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = '🗄️ Archive Selected';
+  }
+}
 </script>
 </body>
 </html>
