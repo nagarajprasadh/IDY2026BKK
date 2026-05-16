@@ -76,6 +76,8 @@
     .stat-card{text-align:center;}
     .stat-card.green .stat-val{color:#4ADE80;text-shadow:0 0 12px rgba(74,222,128,0.55);}
     .stat-card.amber .stat-val{color:#FBBF24;text-shadow:0 0 12px rgba(251,191,36,0.55);}
+    .stat-card.red   .stat-val{color:#F87171;text-shadow:0 0 12px rgba(248,113,113,0.55);}
+    .stat-card.orange.stat-val{color:#FB923C;text-shadow:0 0 12px rgba(251,146,60,0.55);}
 
     /* ── SECTION CARDS ─────────────────────────────────── */
 
@@ -326,6 +328,18 @@
         <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-val" id="sCollected">—</div><div class="stat-lbl">Collected</div></div>
         <div class="stat-card amber"><div class="stat-icon">⏳</div><div class="stat-val" id="sPending">—</div><div class="stat-lbl">Pending</div></div>
       </div>
+      <!-- RESEND EMAIL STATS -->
+      <div class="section-card" style="margin-bottom:16px;">
+        <h3>📧 Email Delivery (via Resend)</h3>
+        <div class="stats-grid" id="resendStatsGrid">
+          <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-val" id="rsDelivered">—</div><div class="stat-lbl">Delivered</div></div>
+          <div class="stat-card red">  <div class="stat-icon">❌</div><div class="stat-val" id="rsBounced">—</div><div class="stat-lbl">Bounced</div></div>
+          <div class="stat-card amber"><div class="stat-icon">⚠️</div><div class="stat-val" id="rsComplained">—</div><div class="stat-lbl">Complained</div></div>
+          <div class="stat-card">      <div class="stat-icon">📨</div><div class="stat-val" id="rsTotal">—</div><div class="stat-lbl">Total Tracked</div></div>
+        </div>
+        <p class="refresh-note" id="rsNote" style="text-align:right;margin-top:4px;">Loading Resend stats…</p>
+      </div>
+
       <!-- SIZE READINESS DASHBOARD -->
       <div class="section-card">
         <h3>👕 T-Shirt Readiness by Size</h3>
@@ -470,6 +484,7 @@
 <script>
 const SCRIPT_URL     = 'https://script.google.com/macros/s/AKfycbzIeD5GUbVD3zkJfyN7So89DXkbf2MtmTUFR3oNdhMi9e2hyC0MIfPjdRxJW0tfCF265Q/exec';
 const ADMIN_PASSWORD = 'yoga2026admin';
+const DASHBOARD_PASS = 'idy2026dash';
 const SIZES = ['S','M','L','XL','XXL'];
 
 let allRegs     = [];
@@ -483,7 +498,9 @@ function doLogin() {
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('adminApp').classList.add('show');
     loadData();
+    loadResendStats();
     refreshTimer = setInterval(loadData, 30000);
+    setInterval(loadResendStats, 5 * 60 * 1000); // refresh Resend stats every 5 min
   } else {
     document.getElementById('loginErr').textContent = 'Incorrect password.';
     document.getElementById('pwInput').value = '';
@@ -511,6 +528,24 @@ async function loadData() {
     renderRegList();
   } catch(e) {
     console.error('Load error:', e);
+  }
+}
+
+/* ── RESEND STATS ──────────────────────────────────── */
+async function loadResendStats() {
+  document.getElementById('rsNote').textContent = 'Loading Resend stats…';
+  try {
+    const url = `${SCRIPT_URL}?action=resendStats&pass=${encodeURIComponent(DASHBOARD_PASS)}`;
+    const resp = await fetch(url);
+    const d = await resp.json();
+    if (d.error) { document.getElementById('rsNote').textContent = 'Stats unavailable: ' + d.error; return; }
+    document.getElementById('rsDelivered').textContent  = d.delivered  ?? '—';
+    document.getElementById('rsBounced').textContent    = d.bounced    ?? '—';
+    document.getElementById('rsComplained').textContent = d.complained ?? '—';
+    document.getElementById('rsTotal').textContent      = d.total      ?? '—';
+    document.getElementById('rsNote').textContent = '↻ Last updated ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    document.getElementById('rsNote').textContent = 'Could not load Resend stats.';
   }
 }
 
