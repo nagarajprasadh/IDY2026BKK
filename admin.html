@@ -235,11 +235,18 @@
     .modal-field label{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px;}
     .modal-field input{width:100%;padding:10px 13px;border:2px solid var(--border);border-radius:9px;font-size:14px;font-family:inherit;color:var(--text);transition:border-color .2s;}
     .modal-field input:focus{outline:none;border-color:var(--primary);}
-    .modal-prow{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;}
+    .modal-prow{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;transition:opacity .2s;}
     .modal-prow:last-child{border-bottom:none;}
+    .modal-prow.removed{opacity:.4;}
+    .modal-prow.removed .modal-pname{text-decoration:line-through;color:var(--muted);}
+    .modal-prow.removed .modal-psize{visibility:hidden;}
     .modal-pname{font-weight:600;flex:1;}
     .modal-psize{padding:6px 10px;border:2px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;font-weight:700;color:var(--primary);background:#fff;cursor:pointer;}
     .modal-psize:focus{outline:none;border-color:var(--primary);}
+    .modal-premove{padding:4px 9px;border:1.5px solid #FCA5A5;border-radius:7px;background:#FEF2F2;color:#DC2626;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;line-height:1;transition:all .15s;}
+    .modal-premove:hover{background:#DC2626;color:#fff;}
+    .modal-premove.undo{border-color:#6EE7B7;background:#ECFDF5;color:#065F46;}
+    .modal-premove.undo:hover{background:#065F46;color:#fff;}
     .modal-actions{display:flex;gap:10px;margin-top:20px;}
     .modal-btn-cancel{flex:1;padding:12px;background:#F3F4F6;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
     .modal-btn-save{flex:2;padding:12px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
@@ -829,13 +836,23 @@ function editReg(docId) {
   document.getElementById('modalAlert').innerHTML   = '';
   const pp = document.getElementById('modalParticipants');
   pp.innerHTML = (r.participants||[]).map((p,i) => `
-    <div class="modal-prow">
+    <div class="modal-prow" id="prow_${i}">
       <span class="modal-pname">${esc(p.name)}${p.isRegistrant?' ⭐':''}</span>
       <select class="modal-psize" id="psize_${i}">
         ${['S','M','L','XL','XXL'].map(s=>`<option value="${s}"${p.size===s?' selected':''}>${s}</option>`).join('')}
       </select>
+      <button class="modal-premove" id="prembtn_${i}" onclick="toggleRemoveParticipant(${i})">✕ Remove</button>
     </div>`).join('');
   document.getElementById('editModal').classList.add('open');
+}
+
+function toggleRemoveParticipant(i) {
+  const row = document.getElementById('prow_'+i);
+  const btn = document.getElementById('prembtn_'+i);
+  const removing = !row.classList.contains('removed');
+  row.classList.toggle('removed', removing);
+  btn.textContent = removing ? '↩ Undo' : '✕ Remove';
+  btn.classList.toggle('undo', removing);
 }
 
 function closeEditModal() {
@@ -848,9 +865,14 @@ async function saveEdit() {
   const r = allRegs.find(x => x.docId === editingDocId);
   if (!r) { closeEditModal(); return; }
   const newEmail = document.getElementById('modalEmail').value.trim();
-  const updatedParticipants = (r.participants||[]).map((p,i) => ({
-    ...p, size: document.getElementById('psize_'+i)?.value || p.size
-  }));
+  const updatedParticipants = (r.participants||[])
+    .map((p,i) => ({ ...p, size: document.getElementById('psize_'+i)?.value || p.size, _removed: document.getElementById('prow_'+i)?.classList.contains('removed') }))
+    .filter(p => !p._removed)
+    .map(({ _removed, ...p }) => p);
+  if (updatedParticipants.length === 0) {
+    document.getElementById('modalAlert').innerHTML = '<div class="al al-err">❌ Cannot remove all participants — at least one must remain.</div>';
+    return;
+  }
   const btn = document.getElementById('modalSaveBtn');
   btn.disabled = true; btn.textContent = 'Saving…';
   document.getElementById('modalAlert').innerHTML = '';
