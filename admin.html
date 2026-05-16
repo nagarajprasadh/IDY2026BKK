@@ -395,6 +395,13 @@
         <h3>✅ Archive Complete</h3>
         <div id="archiveDoneMsg" style="font-size:14px;color:var(--muted);"></div>
       </div>
+
+      <div class="section-card">
+        <h3>📧 Failed Sends — Retry</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Retries all QR emails that previously failed due to quota limits. Run this the next morning when the quota has reset.</p>
+        <button class="lookup-btn" id="resendFailedBtn" onclick="resendFailed()" style="width:100%;justify-content:center;padding:13px;">📧 Resend All Failed Emails</button>
+        <div id="resendFailedAlert" style="margin-top:10px;"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -766,6 +773,30 @@ This cannot be undone. Proceed?`;
   } catch(e) {
     alert('Archive failed: ' + e.message);
     btn.disabled = false; btn.textContent = '🗄️ Archive Duplicates & Resend QR Confirmations';
+  }
+}
+
+async function resendFailed() {
+  const btn = document.getElementById('resendFailedBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  setAl('resendFailedAlert','','info');
+  try {
+    const url = `${SCRIPT_URL}?action=resendFailed&pass=${encodeURIComponent(ADMIN_PASSWORD)}`;
+    const res  = await fetch(url);
+    const d    = await res.json();
+    if (d.error) throw new Error(d.error);
+    let html = `<div class="al al-ok">
+      ✅ <strong>${d.resent}</strong> email(s) resent successfully.`;
+    if (d.stillFailed > 0) {
+      html += `<br>⚠️ <strong>${d.stillFailed}</strong> still failing (quota may still be active):<br>
+        <small style="color:#C62828;">${(d.stillFailedList||[]).join('<br>')}</small>`;
+    }
+    html += `</div>`;
+    document.getElementById('resendFailedAlert').innerHTML = html;
+  } catch(e) {
+    setAl('resendFailedAlert', 'Resend failed: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = '📧 Resend All Failed Emails';
   }
 }
 
