@@ -283,6 +283,7 @@
     <button class="nav-tab active" onclick="switchTab('dashboard')"     id="tab-dashboard">📊 Dashboard</button>
     <button class="nav-tab"        onclick="switchTab('distribution')"  id="tab-distribution">📦 Distribution</button>
     <button class="nav-tab"        onclick="switchTab('registrations')" id="tab-registrations">📋 Registrations</button>
+    <button class="nav-tab"        onclick="switchTab('dedupe')"         id="tab-dedupe">🔄 Dedupe</button>
   </nav>
 
   <div class="tab-content">
@@ -363,6 +364,37 @@
       </div>
       <div class="reg-count" id="regCount"></div>
       <div id="regList"></div>
+    </div>
+    <div class="tab-pane" id="pane-dedupe">
+      <div class="page-title">🔄 Deduplication</div>
+
+      <div class="section-card">
+        <h3>🔍 Step 1 — Scan for Exact Duplicates</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Finds registrations with the same email <em>and</em> identical participant names and shirt sizes. These were caused by email confirmation failures and are safe to archive.</p>
+        <button class="lookup-btn" id="scanBtn" onclick="scanDupes()" style="width:100%;justify-content:center;padding:13px;">🔍 Scan Sheet Now</button>
+        <div id="scanAlert" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="section-card" id="dupeResultCard" style="display:none;">
+        <h3>📊 Scan Results</h3>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;">
+          <div class="stat-card"><div class="stat-val" id="dTotalGroups">—</div><div class="stat-lbl">Duplicate Groups</div></div>
+          <div class="stat-card amber"><div class="stat-val" id="dTotalRows">—</div><div class="stat-lbl">Rows to Archive</div></div>
+        </div>
+        <div id="dupeGroupList" style="max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;"></div>
+        <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+          <p style="font-size:12px;color:var(--muted);margin-bottom:10px;">⚠️ This will archive duplicate rows to a <strong>Duplicates Archive</strong> sheet and resend QR emails to all kept registrations. This cannot be undone.</p>
+          <button id="archiveBtn" onclick="confirmArchive()"
+            style="width:100%;padding:13px;background:#C0392B;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;">
+            🗄️ Archive Duplicates &amp; Resend QR Confirmations
+          </button>
+        </div>
+      </div>
+
+      <div class="section-card" id="archiveDoneCard" style="display:none;">
+        <h3>✅ Archive Complete</h3>
+        <div id="archiveDoneMsg" style="font-size:14px;color:var(--muted);"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -660,6 +692,83 @@ function fmtTime(v) {
   try { return new Date(v).toLocaleString('en-GB',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}); }
   catch(_) { return String(v); }
 }
+
+/* ── DEDUPE ─────────────────────────────────────────── */
+let scannedGroups = [];
+
+async function scanDupes() {
+  const btn = document.getElementById('scanBtn');
+  btn.disabled = true; btn.textContent = 'Scanning…';
+  setAl('scanAlert','','info');
+  document.getElementById('dupeResultCard').style.display = 'none';
+  document.getElementById('archiveDoneCard').style.display = 'none';
+  try {
+    const url = `${SCRIPT_URL}?action=findDupes&pass=${encodeURIComponent(ADMIN_PASSWORD)}`;
+    const res  = await fetch(url);
+    const d    = await res.json();
+    if (d.error) throw new Error(d.error);
+    scannedGroups = d.groups || [];
+    document.getElementById('dTotalGroups').textContent = d.totalGroups;
+    document.getElementById('dTotalRows').textContent   = d.totalDupRows;
+    renderDupeGroups(scannedGroups);
+    document.getElementById('dupeResultCard').style.display = 'block';
+    setAl('scanAlert', `Found ${d.totalGroups} duplicate group(s) — ${d.totalDupRows} rows to archive.`, 'ok');
+  } catch(e) {
+    setAl('scanAlert', 'Scan failed: ' + e.message, 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = '🔍 Scan Sheet Now';
+  }
+}
+
+function renderDupeGroups(groups) {
+  const el = document.getElementById('dupeGroupList');
+  if (!groups.length) { el.innerHTML = '<p style="padding:16px;color:var(--muted);font-size:13px;">No exact duplicates found.</p>'; return; }
+  el.innerHTML = groups.map((g,i) => `
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+        <strong style="font-size:13px;">#${g.keepQueue} — ${esc(g.keepName)}</strong>
+        <span style="background:#E8F5E9;color:#2E7D32;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700;">KEEP</span>
+      </div>
+      <div style="color:var(--muted);margin-bottom:4px;">${esc(g.email)}</div>
+      <div style="color:#555;margin-bottom:6px;">Participants: ${g.keepParticipantNames.map(n=>esc(n)).join(', ')}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        ${g.dups.map(d=>`<span style="background:#FFEBEE;color:#C62828;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;">Archive #${d.queue}</span>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+async function confirmArchive() {
+  if (!scannedGroups.length) { alert('Please scan first.'); return; }
+  const msg = `You are about to:
+• Archive ${scannedGroups.reduce((s,g)=>s+g.dups.length,0)} duplicate rows
+• Resend QR email to ${scannedGroups.length} registrants
+
+This cannot be undone. Proceed?`;
+  if (!confirm(msg)) return;
+  const btn = document.getElementById('archiveBtn');
+  btn.disabled = true; btn.textContent = 'Processing…';
+  try {
+    const res = await fetch(SCRIPT_URL, { method:'POST', body: JSON.stringify({
+      action:'archiveDupes', password: ADMIN_PASSWORD, groups: scannedGroups
+    })});
+    const d = await res.json();
+    if (!d.success) throw new Error(d.error || 'Unknown error');
+    document.getElementById('dupeResultCard').style.display = 'none';
+    const done = document.getElementById('archiveDoneCard');
+    done.style.display = 'block';
+    document.getElementById('archiveDoneMsg').innerHTML =
+      `<p>✅ <strong>${d.archived}</strong> duplicate rows archived to <em>Duplicates Archive</em> sheet.</p>
+       <p>📧 <strong>${d.resent}</strong> QR confirmation emails resent.</p>
+       ${d.emailErrors && d.emailErrors.length ? '<p style="color:#C62828;">⚠️ Email errors: ' + d.emailErrors.join(', ') + '</p>' : ''}
+       <p style="margin-top:10px;"><button class="lookup-btn" onclick="scanDupes()" style="padding:10px 20px;">🔍 Scan Again</button></p>`;
+    scannedGroups = [];
+    await loadData();
+  } catch(e) {
+    alert('Archive failed: ' + e.message);
+    btn.disabled = false; btn.textContent = '🗄️ Archive Duplicates & Resend QR Confirmations';
+  }
+}
+
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function setAl(id,msg,t){const e=document.getElementById(id);if(e)e.innerHTML=`<div class="al al-${t}">${esc(msg)}</div>`;}
 function clearAl(id){const e=document.getElementById(id);if(e)e.innerHTML='';}
