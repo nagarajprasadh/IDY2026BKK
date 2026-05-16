@@ -397,6 +397,18 @@
       </div>
 
       <div class="section-card">
+        <h3>📨 Resend QR by Queue Number</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Resend the confirmation email to any registration by queue number.</p>
+        <div style="display:flex;gap:8px;">
+          <input type="number" id="resendQueueInput" placeholder="e.g. 1919" min="1000"
+            style="flex:1;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-size:15px;font-family:inherit;color:var(--text);"
+            onkeydown="if(event.key==='Enter')resendByQueue()">
+          <button class="lookup-btn" id="resendQueueBtn" onclick="resendByQueue()" style="padding:11px 18px;">📨 Send</button>
+        </div>
+        <div id="resendQueueAlert" style="margin-top:10px;"></div>
+      </div>
+
+      <div class="section-card">
         <h3>📧 Failed Sends — Retry</h3>
         <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Retries all QR emails that previously failed due to quota limits. Run this the next morning when the quota has reset.</p>
         <button class="lookup-btn" id="resendFailedBtn" onclick="resendFailed()" style="width:100%;justify-content:center;padding:13px;">📧 Resend All Failed Emails</button>
@@ -773,6 +785,26 @@ This cannot be undone. Proceed?`;
   } catch(e) {
     alert('Archive failed: ' + e.message);
     btn.disabled = false; btn.textContent = '🗄️ Archive Duplicates & Resend QR Confirmations';
+  }
+}
+
+async function resendByQueue() {
+  const q = document.getElementById('resendQueueInput').value.trim();
+  if (!q) { setAl('resendQueueAlert', 'Please enter a queue number.', 'err'); return; }
+  const btn = document.getElementById('resendQueueBtn');
+  btn.disabled = true; btn.textContent = 'Sending…';
+  setAl('resendQueueAlert', '', 'info');
+  try {
+    const url = `${SCRIPT_URL}?action=resendByQueue&pass=${encodeURIComponent(ADMIN_PASSWORD)}&queue=${encodeURIComponent(q)}`;
+    const res  = await fetch(url);
+    const d    = await res.json();
+    if (!d.success) throw new Error(d.error || 'Unknown error');
+    setAl('resendQueueAlert', `✅ QR email resent to ${d.email} (Queue #${d.queueNumber})`, 'ok');
+    document.getElementById('resendQueueInput').value = '';
+  } catch(e) {
+    setAl('resendQueueAlert', '❌ ' + e.message, 'err');
+  } finally {
+    btn.disabled = false; btn.textContent = '📨 Send';
   }
 }
 
